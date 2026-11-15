@@ -1,1 +1,107 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>New Sindhu Catering Admin</title>
+<style>
+body{margin:0;background:#101827;color:white;font-family:Arial;display:grid;place-items:center;min-height:100vh;padding:20px}
+.card{background:#1e293b;padding:25px;border-radius:18px;width:90%;max-width:380px;text-align:center}
+h2{color:#4ade80}
+input{width:90%;padding:14px;margin:12px 0;border-radius:8px;border:1px solid #64748b;background:#0f172a;color:white;font-size:16px}
+button{width:100%;padding:14px;margin-top:12px;background:#16a34a;color:white;border:0;border-radius:8px;font-size:16px;font-weight:bold}
+#recaptcha-container{display:flex;justify-content:center;margin-top:12px}
+#msg{font-size:14px;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div class="card">
+<h2>NEW SINDHU CATERING</h2>
+<h3>Admin Login</h3>
+<div id="login">
+<p>Registered Mobile Number</p>
+<input value="+919171193165" readonly>
+<div id="recaptcha-container"></div>
+<button id="send">SEND OTP</button>
+<div id="otpbox" hidden>
+<input id="otp" placeholder="Enter 6 digit OTP" maxlength="6" inputmode="numeric">
+<button id="verify">VERIFY OTP</button>
+</div>
+</div>
+<div id="success" hidden>
+<h2>Login Successful!</h2>
+<p>Admin mobile verified.</p>
+<button id="logout">LOGOUT</button>
+</div>
+<p id="msg"></p>
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+ getAuth,RecaptchaVerifier,
+ signInWithPhoneNumber,onAuthStateChanged,signOut
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+const config={
+apiKey:"AIzaSyBWDKG9D_gk-5zGJyPmUuItaVcwaKPMciw",
+authDomain:"new-sindhu-catering.firebaseapp.com",
+databaseURL:"https://new-sindhu-catering-default-rtdb.asia-southeast1.firebasedatabase.app",
+projectId:"new-sindhu-catering",
+storageBucket:"new-sindhu-catering.firebasestorage.app",
+messagingSenderId:"1064841358060",
+appId:"1:1064841358060:web:d073087fce0c0e9f3453c9",
+measurementId:"G-NX6MZN7XW6"
+};
+
+const app=initializeApp(config);
+const auth=getAuth(app);
+const ADMIN="+919171193165";
+let confirmation=null;
+let verifier=null;
+
+const msg=document.getElementById("msg");
+
+function show(t){msg.textContent=t;}
+
+document.getElementById("send").onclick=async()=>{
+ try{
+ document.getElementById("send").disabled=true;
+ verifier=new RecaptchaVerifier(auth,"recaptcha-container",{size:"normal"});
+ await verifier.render();
+ confirmation=await signInWithPhoneNumber(auth,ADMIN,verifier);
+ document.getElementById("otpbox").hidden=false;
+ show("OTP sent successfully. Check your SMS.");
+ }catch(e){
+ show(e.code+": "+e.message);
+ if(verifier){verifier.clear();verifier=null;}
+ }finally{
+ document.getElementById("send").disabled=false;
+ }
+};
+
+document.getElementById("verify").onclick=async()=>{
+ try{
+ const code=document.getElementById("otp").value.trim();
+ if(!/^\d{6}$/.test(code))throw new Error("Enter valid 6 digit OTP");
+ const result=await confirmation.confirm(code);
+ if(result.user.phoneNumber!==ADMIN){
+ await signOut(auth);
+ throw new Error("Unauthorized Admin");
+ }
+ show("Admin OTP verified successfully!");
+ }catch(e){show(e.code||e.message);}
+};
+
+onAuthStateChanged(auth,user=>{
+ const valid=user && user.phoneNumber===ADMIN;
+ document.getElementById("login").hidden=!!valid;
+ document.getElementById("success").hidden=!valid;
+});
+
+document.getElementById("logout").onclick=()=>signOut(auth);
+</script>
+</body>
+</html>
+
