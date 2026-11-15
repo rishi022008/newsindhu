@@ -1,1 +1,238 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>New Sindhu Delivery</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f3f4f6;margin:0;padding:16px;color:#222}
+header{background:#087b45;color:white;padding:18px;border-radius:12px;text-align:center}
+.card{background:white;padding:16px;margin:14px 0;border-radius:12px;box-shadow:0 2px 8px #0001}
+input,button{width:100%;padding:13px;margin:7px 0;border-radius:8px;border:1px solid #ccc;font-size:16px}
+button{background:#087b45;color:white;border:0;font-weight:bold}
+button.secondary{background:#2456a6}
+button:disabled{opacity:.5}
+.small{color:#666;font-size:14px}
+.hidden{display:none}
+.order-title{font-weight:bold;font-size:18px}
+</style>
+</head>
+<body>
 
+<header>
+<h2>🚚 New Sindhu Catering</h2>
+<p>Delivery Partner App</p>
+</header>
+
+<div class="card" id="loginBox">
+<h3>Delivery Partner Login</h3>
+<input id="email" type="email" placeholder="Email ID">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">LOGIN</button>
+<p id="loginMessage" class="small"></p>
+</div>
+
+<div id="appBox" class="hidden">
+<div class="card">
+<h3>Welcome Delivery Partner</h3>
+<button class="secondary" onclick="logout()">LOGOUT</button>
+<button onclick="enableSound()">🔔 Enable Order Sound</button>
+<p id="soundMessage" class="small"></p>
+</div>
+
+<h3>📦 Delivery Orders</h3>
+<div id="orders">
+<p class="small">Orders loading...</p>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from
+"https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+
+import {
+ getAuth, signInWithEmailAndPassword,
+ onAuthStateChanged, signOut
+} from
+"https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+import {
+ getDatabase, ref, onValue, update, serverTimestamp
+} from
+"https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+const firebaseConfig = {
+ apiKey: "AIzaSyBWDKG9D_gk-5zGJyPmUuItaVcwaKPMciw",
+ authDomain: "new-sindhu-catering.firebaseapp.com",
+ databaseURL: "https://new-sindhu-catering-default-rtdb.asia-southeast1.firebasedatabase.app",
+ projectId: "new-sindhu-catering",
+ storageBucket: "new-sindhu-catering.firebasestorage.app",
+ messagingSenderId: "1064841358060",
+ appId: "1:1064841358060:web:d073087fce0c0e9f3453c9"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+let currentUser = null;
+let soundEnabled = false;
+let knownOrders = new Set();
+
+window.login = async function(){
+ const email = document.getElementById("email").value.trim();
+ const password = document.getElementById("password").value;
+ const msg = document.getElementById("loginMessage");
+
+ try{
+  await signInWithEmailAndPassword(auth,email,password);
+  msg.textContent = "";
+ }catch(e){
+  msg.textContent = "Login failed: " + e.message;
+ }
+};
+
+window.logout = async function(){
+ await signOut(auth);
+};
+
+window.enableSound = function(){
+ soundEnabled = true;
+ document.getElementById("soundMessage").textContent =
+ "🔔 Sound enabled";
+ beep();
+};
+
+function beep(){
+ if(!soundEnabled) return;
+ try{
+  const ctx = new AudioContext();
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  oscillator.connect(gain);
+  gain.connect(ctx.destination);
+  oscillator.frequency.value = 850;
+  gain.gain.value = 0.15;
+  oscillator.start();
+  oscillator.stop(ctx.currentTime + 0.25);
+ }catch(e){}
+}
+
+onAuthStateChanged(auth,user=>{
+ currentUser = user;
+
+ document.getElementById("loginBox").classList.toggle("hidden",!!user);
+ document.getElementById("appBox").classList.toggle("hidden",!user);
+
+ if(user){
+  listenOrders();
+ }
+});
+
+function listenOrders(){
+ onValue(ref(db,"orders"),snapshot=>{
+  const box = document.getElementById("orders");
+  box.innerHTML = "";
+
+  if(!snapshot.exists()){
+   box.innerHTML = "<p>No orders available.</p>";
+   return;
+  }
+
+  const data = snapshot.val();
+  let count = 0;
+
+  Object.entries(data).reverse().forEach(([id,o])=>{
+   const status = String(o.status || o.orderStatus || "")
+      .toLowerCase().trim();
+
+   if(status !== "out for delivery") return;
+
+   count++;
+
+   if(!knownOrders.has(id)){
+    if(knownOrders.size > 0) beep();
+    knownOrders.add(id);
+   }
+
+   const deliveryStatus = o.deliveryStatus || "Waiting";
+
+   const items = Array.isArray(o.items)
+    ? o.items.map(i=>`${i.name} x ${i.quantity}`).join("<br>")
+    : "Order details unavailable";
+
+   const phone = o.mobile || o.mobileNumber || o.phone || "";
+   const address = o.address || "Address not available";
+   const map = o.mapLink || o.gps || "";
+
+   const card = document.createElement("div");
+   card.className = "card";
+
+   card.innerHTML = `
+    <div class="order-title">Order #${id.slice(-6)}</div>
+    <p><b>Customer:</b> ${safe(o.customerName || "Customer")}</p>
+    <p><b>Phone:</b> ${safe(phone)}</p>
+    <p><b>Address:</b> ${safe(address)}</p>
+    <p><b>Items:</b><br>${items}</p>
+    <p><b>Total:</b> ₹${safe(o.total || o.amount || 0)}</p>
+    <p><b>Payment:</b> ${safe(o.paymentMethod || "")}</p>
+    <p><b>Delivery Status:</b> ${safe(deliveryStatus)}</p>
+
+    ${map ? `<button class="secondary" onclick="openMap('${encodeURIComponent(map)}')">📍 OPEN GOOGLE MAPS</button>` : ""}
+
+    ${deliveryStatus === "Waiting" ? `<button onclick="changeStatus('${id}','Accepted')">ACCEPT ORDER</button>` : ""}
+
+    ${deliveryStatus === "Accepted" ? `<button onclick="changeStatus('${id}','Picked Up')">PICKED UP</button>` : ""}
+
+    ${deliveryStatus === "Picked Up" ? `<button onclick="changeStatus('${id}','Delivered')">DELIVERED</button>` : ""}
+   `;
+
+   box.appendChild(card);
+  });
+
+  if(count === 0){
+   box.innerHTML = "<div class='card'>🚫 No new delivery orders.</div>";
+  }
+ });
+}
+
+function safe(value){
+ return String(value).replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",
+  '"':"&quot;","'":"&#39;"
+ }[c]));
+}
+
+window.openMap = function(link){
+ const url = decodeURIComponent(link);
+ if(url.startsWith("https://") || url.startsWith("http://")){
+  window.open(url,"_blank");
+ }else{
+  window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(url),"_blank");
+ }
+};
+
+window.changeStatus = async function(id,status){
+ try{
+  const changes = {
+   deliveryStatus:status,
+   deliveryPartnerUid:currentUser.uid,
+   deliveryUpdatedAt:serverTimestamp()
+  };
+
+  if(status === "Delivered"){
+   changes.status = "Delivered";
+   changes.orderStatus = "Delivered";
+   changes.deliveredAt = serverTimestamp();
+  }
+
+  await update(ref(db,"orders/"+id),changes);
+  alert("Status updated: " + status);
+ }catch(e){
+  alert("Error: " + e.message);
+ }
+};
+</script>
+</body>
+</html>
