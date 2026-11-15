@@ -1,89 +1,37 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>New Sindhu Catering Admin</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>New Sindhu Catering - Admin Dashboard</title>
 <style>
-body{margin:0;background:#101827;color:white;font-family:Arial;display:grid;place-items:center;min-height:100vh;padding:20px}
-.card{background:#1e293b;padding:25px;border-radius:18px;width:90%;max-width:380px;text-align:center}
-h2{color:#4ade80}
-input{width:90%;padding:14px;margin:12px 0;border-radius:8px;border:1px solid #64748b;background:#0f172a;color:white;font-size:16px}
-button{width:100%;padding:14px;margin-top:12px;background:#16a34a;color:white;border:0;border-radius:8px;font-size:16px;font-weight:bold}
-#recaptcha-container{display:flex;justify-content:center;margin-top:12px}
-#msg{font-size:14px;overflow-wrap:anywhere}
-</style>
-</head>
-<body>
-<div class="card">
-  <h2>NEW SINDHU CATERING</h2>
-  <h3>Admin Login</h3>
-  <div id="login">
-    <p>Admin Email</p>
-    <input id="email" type="email" value="rishi022008@gmail.com" autocomplete="username" placeholder="Admin email">
-    <p>Password</p>
-    <input id="password" type="password" autocomplete="current-password" placeholder="Enter password">
-    <button id="loginBtn">LOGIN</button>
-  </div>
-  <div id="success" hidden>
-    <h2>Login Successful!</h2>
-    <p id="adminEmail"></p>
-    <p>Admin authentication completed.</p>
-    <button id="logout">LOGOUT</button>
-  </div>
-  <p id="msg"></p>
+*{box-sizing:border-box}body{margin:0;background:#101827;color:#f8fafc;font-family:Arial,sans-serif;padding:16px}.wrap{max-width:900px;margin:auto}.head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{color:#4ade80;font-weight:800;font-size:22px}.muted{color:#aab6c7}.panel,.order{background:#1e293b;border-radius:14px;padding:16px;margin:14px 0}.stats{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#263449;border-radius:10px;padding:12px;flex:1;min-width:110px}.stat b{display:block;font-size:24px;margin-top:5px}button,select{border:0;border-radius:8px;padding:11px 14px;font-weight:700;cursor:pointer}button{background:#16a34a;color:white}button.reject{background:#dc2626}button.secondary{background:#475569}button:disabled{opacity:.5}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.order h3{margin:0 0 8px}.pill{display:inline-block;background:#334155;padding:5px 9px;border-radius:20px;font-size:12px}.row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.items{white-space:pre-wrap;line-height:1.5}.error{color:#fca5a5}.success{color:#86efac}#login{max-width:420px;margin:12vh auto;text-align:center}input{width:100%;padding:13px;margin:8px 0;border-radius:8px;border:1px solid #64748b;background:#0f172a;color:white}#orders{margin-top:12px}.empty{text-align:center;padding:30px;color:#cbd5e1}
+</style></head>
+<body><div class="wrap">
+<section id="login" class="panel"><div class="brand">NEW SINDHU CATERING</div><h2>Admin Login</h2><input id="email" type="email" value="rishi022008@gmail.com" autocomplete="username"><input id="password" type="password" placeholder="Admin password" autocomplete="current-password"><button id="loginBtn" style="width:100%">LOGIN</button><p id="loginMsg" class="error"></p></section>
+<section id="dashboard" hidden><div class="head"><div><div class="brand">NEW SINDHU CATERING</div><h2 style="margin:6px 0">Order Dashboard</h2><span class="muted" id="adminEmail"></span></div><button class="secondary" id="logoutBtn">LOGOUT</button></div>
+<div class="stats"><div class="stat">Total Orders<b id="total">0</b></div><div class="stat">Pending<b id="pending">0</b></div><div class="stat">Preparing<b id="preparing">0</b></div><div class="stat">Delivered<b id="delivered">0</b></div></div>
+<div class="panel"><div class="row"><h3 style="margin:0">Customer Orders</h3><button class="secondary" id="refreshBtn">REFRESH</button></div><p id="dbMsg" class="muted">Connecting to orders…</p><div id="orders"></div></div></section>
 </div>
-
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import {
-  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-
-const config = {
-  apiKey: "AIzaSyBWDKG9D_gk-5zGJyPmUuItaVcwaKPMciw",
-  authDomain: "new-sindhu-catering.firebaseapp.com",
-  databaseURL: "https://new-sindhu-catering-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "new-sindhu-catering",
-  storageBucket: "new-sindhu-catering.firebasestorage.app",
-  messagingSenderId: "1064841358060",
-  appId: "1:1064841358060:web:d073087fce0c0e9f3453c9",
-  measurementId: "G-NX6MZN7XW6"
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+import { getDatabase, ref, onValue, update } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js';
+const firebaseConfig={
+ apiKey:'AIzaSyBWDKG9D_gk-5zGJyPmUuItaVcwaKPMciw',
+ authDomain:'new-sindhu-catering.firebaseapp.com',
+ databaseURL:'https://new-sindhu-catering-default-rtdb.asia-southeast1.firebasedatabase.app',
+ projectId:'new-sindhu-catering',storageBucket:'new-sindhu-catering.firebasestorage.app',
+ messagingSenderId:'1064841358060',appId:'1:1064841358060:web:d073087fce0c0e9f3453c9',measurementId:'G-NX6MZN7XW6'
 };
-
-const app = initializeApp(config);
-const auth = getAuth(app);
-const ADMIN_EMAIL = "rishi022008@gmail.com";
-const msg = document.getElementById("msg");
-
-function show(message) { msg.textContent = message; }
-
-document.getElementById("loginBtn").addEventListener("click", async () => {
-  const email = document.getElementById("email").value.trim().toLowerCase();
-  const password = document.getElementById("password").value;
-  try {
-    if (!email || !password) throw new Error("Enter admin email and password.");
-    if (email !== ADMIN_EMAIL) throw new Error("Unauthorized Admin Email.");
-    document.getElementById("loginBtn").disabled = true;
-    await signInWithEmailAndPassword(auth, email, password);
-    show("Login successful.");
-  } catch (error) {
-    show(error.code ? error.code + ": " + error.message : error.message);
-  } finally {
-    document.getElementById("loginBtn").disabled = false;
-  }
-});
-
-onAuthStateChanged(auth, user => {
-  const valid = !!user && (user.email || "").toLowerCase() === ADMIN_EMAIL;
-  document.getElementById("login").hidden = valid;
-  document.getElementById("success").hidden = !valid;
-  if (valid) document.getElementById("adminEmail").textContent = user.email;
-  if (user && !valid) signOut(auth);
-});
-
-document.getElementById("logout").addEventListener("click", () => signOut(auth));
-</script>
-</body>
-</html>
+const ADMIN_EMAIL='rishi022008@gmail.com';
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getDatabase(app);
+const $=id=>document.getElementById(id);let stopOrders=null,cache={};
+$('loginBtn').onclick=async()=>{ $('loginMsg').textContent='';try{await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(e){$('loginMsg').textContent=(e.code||'')+' '+e.message}};
+$('logoutBtn').onclick=()=>signOut(auth);$('refreshBtn').onclick=()=>{if(auth.currentUser)startOrders()};
+onAuthStateChanged(auth,user=>{if(user&&user.email?.toLowerCase()===ADMIN_EMAIL){$('login').hidden=true;$('dashboard').hidden=false;$('adminEmail').textContent=user.email;startOrders()}else{$('dashboard').hidden=true;$('login').hidden=false;if(user)signOut(auth);if(stopOrders){stopOrders();stopOrders=null}}});
+function pick(o,keys){for(const k of keys){if(o[k]!==undefined&&o[k]!==null&&o[k]!=='')return o[k]}return '—'}
+function startOrders(){if(stopOrders)stopOrders();$('dbMsg').textContent='Loading orders…';stopOrders=onValue(ref(db,'orders'),snap=>{cache=snap.val()||{};render()},err=>{$('dbMsg').textContent='Database error: '+err.message;$('dbMsg').className='error'})}
+function render(){const list=Object.entries(cache).map(([id,o])=>({id,...(o||{})})).sort((a,b)=>(Number(b.createdAt||b.timestamp||0)-Number(a.createdAt||a.timestamp||0)));$('total').textContent=list.length;$('pending').textContent=list.filter(o=>(o.orderStatus||o.status||'Pending')==='Pending').length;$('preparing').textContent=list.filter(o=>(o.orderStatus||o.status)==='Preparing').length;$('delivered').textContent=list.filter(o=>(o.orderStatus||o.status)==='Delivered').length;$('dbMsg').textContent=list.length?'Live orders from Firebase':'No orders found yet';$('dbMsg').className='muted';$('orders').innerHTML='';if(!list.length){$('orders').innerHTML='<div class="empty">No customer orders yet</div>';return}for(const o of list){const status=pick(o,['orderStatus','status']);const name=pick(o,['customerName','name','Customer Name']);const phone=pick(o,['mobileNumber','phone','mobile','Mobile Number']);const address=pick(o,['address','deliveryAddress','Address']);const items=pick(o,['orderedItems','items','products','Ordered Items']);const amount=pick(o,['amount','totalAmount','total','Amount']);const payment=pick(o,['paymentMethod','Payment Method']);const div=document.createElement('article');div.className='order';const safe=typeof items==='string'?items:JSON.stringify(items,null,2);div.innerHTML=`<div class="row"><h3>Order #${o.id.slice(-7)}</h3><span class="pill">${status}</span></div><p><b>Customer:</b> ${esc(name)}<br><b>Mobile:</b> ${esc(phone)}<br><b>Address:</b> ${esc(address)}</p><p class="items"><b>Items:</b> ${esc(safe)}<br><b>Amount:</b> ₹${esc(amount)}<br><b>Payment:</b> ${esc(payment)}</p><div class="actions"><button data-act="Preparing">ACCEPT / PREPARING</button><button class="reject" data-act="Rejected">REJECT</button><select aria-label="Change order status"><option ${status==='Pending'?'selected':''}>Pending</option><option ${status==='Preparing'?'selected':''}>Preparing</option><option ${status==='Ready'?'selected':''}>Ready</option><option ${status==='Out for Delivery'?'selected':''}>Out for Delivery</option><option ${status==='Delivered'?'selected':''}>Delivered</option><option ${status==='Rejected'?'selected':''}>Rejected</option></select><button class="secondary" data-act="select">UPDATE</button></div>`;div.querySelectorAll('button[data-act]').forEach(btn=>btn.onclick=()=>changeStatus(o.id,btn.dataset.act==='select'?div.querySelector('select').value:btn.dataset.act));$('orders').appendChild(div)}}
+function esc(v){return String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function changeStatus(id,status){try{await update(ref(db,'orders/'+id),{orderStatus:status,status:status,updatedAt:Date.now()});$('dbMsg').textContent='Order updated: '+status;$('dbMsg').className='success'}catch(e){alert('Could not update order: '+e.message)}}
+</script></body></html>
