@@ -17,91 +17,73 @@ button{width:100%;padding:14px;margin-top:12px;background:#16a34a;color:white;bo
 </head>
 <body>
 <div class="card">
-<h2>NEW SINDHU CATERING</h2>
-<h3>Admin Login</h3>
-<div id="login">
-<p>Registered Mobile Number</p>
-<input value="+919171193165" readonly>
-<div id="recaptcha-container"></div>
-<button id="send">SEND OTP</button>
-<div id="otpbox" hidden>
-<input id="otp" placeholder="Enter 6 digit OTP" maxlength="6" inputmode="numeric">
-<button id="verify">VERIFY OTP</button>
-</div>
-</div>
-<div id="success" hidden>
-<h2>Login Successful!</h2>
-<p>Admin mobile verified.</p>
-<button id="logout">LOGOUT</button>
-</div>
-<p id="msg"></p>
+  <h2>NEW SINDHU CATERING</h2>
+  <h3>Admin Login</h3>
+  <div id="login">
+    <p>Admin Email</p>
+    <input id="email" type="email" value="rishi022008@gmail.com" autocomplete="username" placeholder="Admin email">
+    <p>Password</p>
+    <input id="password" type="password" autocomplete="current-password" placeholder="Enter password">
+    <button id="loginBtn">LOGIN</button>
+  </div>
+  <div id="success" hidden>
+    <h2>Login Successful!</h2>
+    <p id="adminEmail"></p>
+    <p>Admin authentication completed.</p>
+    <button id="logout">LOGOUT</button>
+  </div>
+  <p id="msg"></p>
 </div>
 
 <script type="module">
-import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
- getAuth,RecaptchaVerifier,
- signInWithPhoneNumber,onAuthStateChanged,signOut
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
-const config={
-apiKey:"AIzaSyBWDKG9D_gk-5zGJyPmUuItaVcwaKPMciw",
-authDomain:"new-sindhu-catering.firebaseapp.com",
-databaseURL:"https://new-sindhu-catering-default-rtdb.asia-southeast1.firebasedatabase.app",
-projectId:"new-sindhu-catering",
-storageBucket:"new-sindhu-catering.firebasestorage.app",
-messagingSenderId:"1064841358060",
-appId:"1:1064841358060:web:d073087fce0c0e9f3453c9",
-measurementId:"G-NX6MZN7XW6"
+const config = {
+  apiKey: "AIzaSyBWDKG9D_gk-5zGJyPmUuItaVcwaKPMciw",
+  authDomain: "new-sindhu-catering.firebaseapp.com",
+  databaseURL: "https://new-sindhu-catering-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "new-sindhu-catering",
+  storageBucket: "new-sindhu-catering.firebasestorage.app",
+  messagingSenderId: "1064841358060",
+  appId: "1:1064841358060:web:d073087fce0c0e9f3453c9",
+  measurementId: "G-NX6MZN7XW6"
 };
 
-const app=initializeApp(config);
-const auth=getAuth(app);
-const ADMIN="+919171193165";
-let confirmation=null;
-let verifier=null;
+const app = initializeApp(config);
+const auth = getAuth(app);
+const ADMIN_EMAIL = "rishi022008@gmail.com";
+const msg = document.getElementById("msg");
 
-const msg=document.getElementById("msg");
+function show(message) { msg.textContent = message; }
 
-function show(t){msg.textContent=t;}
-
-document.getElementById("send").onclick=async()=>{
- try{
- document.getElementById("send").disabled=true;
- verifier=new RecaptchaVerifier(auth,"recaptcha-container",{size:"normal"});
- await verifier.render();
- confirmation=await signInWithPhoneNumber(auth,ADMIN,verifier);
- document.getElementById("otpbox").hidden=false;
- show("OTP sent successfully. Check your SMS.");
- }catch(e){
- show(e.code+": "+e.message);
- if(verifier){verifier.clear();verifier=null;}
- }finally{
- document.getElementById("send").disabled=false;
- }
-};
-
-document.getElementById("verify").onclick=async()=>{
- try{
- const code=document.getElementById("otp").value.trim();
- if(!/^\d{6}$/.test(code))throw new Error("Enter valid 6 digit OTP");
- const result=await confirmation.confirm(code);
- if(result.user.phoneNumber!==ADMIN){
- await signOut(auth);
- throw new Error("Unauthorized Admin");
- }
- show("Admin OTP verified successfully!");
- }catch(e){show(e.code||e.message);}
-};
-
-onAuthStateChanged(auth,user=>{
- const valid=user && user.phoneNumber===ADMIN;
- document.getElementById("login").hidden=!!valid;
- document.getElementById("success").hidden=!valid;
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim().toLowerCase();
+  const password = document.getElementById("password").value;
+  try {
+    if (!email || !password) throw new Error("Enter admin email and password.");
+    if (email !== ADMIN_EMAIL) throw new Error("Unauthorized Admin Email.");
+    document.getElementById("loginBtn").disabled = true;
+    await signInWithEmailAndPassword(auth, email, password);
+    show("Login successful.");
+  } catch (error) {
+    show(error.code ? error.code + ": " + error.message : error.message);
+  } finally {
+    document.getElementById("loginBtn").disabled = false;
+  }
 });
 
-document.getElementById("logout").onclick=()=>signOut(auth);
+onAuthStateChanged(auth, user => {
+  const valid = !!user && (user.email || "").toLowerCase() === ADMIN_EMAIL;
+  document.getElementById("login").hidden = valid;
+  document.getElementById("success").hidden = !valid;
+  if (valid) document.getElementById("adminEmail").textContent = user.email;
+  if (user && !valid) signOut(auth);
+});
+
+document.getElementById("logout").addEventListener("click", () => signOut(auth));
 </script>
 </body>
 </html>
-
