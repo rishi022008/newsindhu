@@ -1,1 +1,78 @@
+name: Build New Sindhu Catering APKs
 
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'index.html'
+      - 'admin/**'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build Customer and Admin APKs
+        run: |
+          set -e
+
+          for APP in customer admin; do
+            mkdir -p "$APP/www"
+
+            if [ "$APP" = "customer" ]; then
+              cp index.html "$APP/www/index.html"
+              APP_NAME="New Sindhu Customer"
+              APP_ID="com.newsindhu.customer"
+            else
+              cp admin/index.html "$APP/www/index.html"
+              APP_NAME="New Sindhu Admin"
+              APP_ID="com.newsindhu.admin"
+            fi
+
+            cd "$APP"
+
+            npm init -y
+            npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+
+            cat > capacitor.config.json <<EOF
+          {
+            "appId": "$APP_ID",
+            "appName": "$APP_NAME",
+            "webDir": "www"
+          }
+          EOF
+
+            npx cap add android
+            npx cap sync android
+
+            cd android
+            chmod +x gradlew
+            ./gradlew assembleDebug
+
+            mkdir -p ../../apk-output
+            cp app/build/outputs/apk/debug/app-debug.apk \
+              "../../apk-output/${APP}-app.apk"
+
+            cd ../..
+          done
+
+      - name: Upload APK Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: New-Sindhu-Catering-APKs
+          path: apk-output/*.apk
