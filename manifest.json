@@ -1,0 +1,21 @@
+{
+  "name": "New Sindhu Catering",
+  "short_name": "Sindhu Catering",
+  "start_url": "/newsindhu/",
+  "scope": "/newsindhu/",
+  "display": "standalone",
+  "background_color": "#101827",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
