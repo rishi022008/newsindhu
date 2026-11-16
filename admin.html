@@ -46,8 +46,8 @@ function esc(v){return String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 async function changeStatus(id,status){try{await update(ref(db,'orders/'+id),{orderStatus:status,status:status,updatedAt:Date.now()});$('dbMsg').textContent='Order updated: '+status;$('dbMsg').className='success'}catch(e){alert('Could not update order: '+e.message)}}
 </script><!-- Auto Order Alarm System -->
 <audio id="orderRingtone" loop preload="auto">
-  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
-  <source src="https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg" type="audio/ogg">
+  <source src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" type="audio/ogg">
+  <source src="https://actions.google.com/sounds/v1/alarms/medium_bell_ringing_near.ogg" type="audio/ogg">
 </audio>
 
 <script>
