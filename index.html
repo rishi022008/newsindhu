@@ -117,10 +117,6 @@ select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;b
 <div id="bar"></div>
 <script id="main">
 let OFF={};
-let IS_ADMIN=false;
-const DOC_PRE="<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n<title>New Sindhu Catering</title>\n<meta name=\"theme-color\" content=\"#1f5c3a\">\n<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-title\" content=\"New Sindhu\">\n<link href=\"https://fonts.googleapis.com/css2?family=Baloo+Thambi+2:wght@600;800&family=Mukta+Malar:wght@400;600&display=swap\" rel=\"stylesheet\">\n<style id=\"css\">";
-const DOC_MID="</style>\n<script src=\"https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js\"><\/script>\n<script src=\"https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js\"><\/script>\n<script src=\"https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js\"><\/script>\n</head>\n<body>\n<header id=\"hd\"></header>\n<main id=\"app\"></main>\n<div id=\"bar\"></div>\n<\u0073cript id=\"main\">";
-const DOC_POST="</\u0073cript>\n</body>\n</html>\n";
 const AVAIL=/*A*/[]/*Z*/;
 const PHONE="9171193165",SHOW="91711 93165",UPI="rishiviji1410-5@okhdfcbank";
 const UPI_QR="data:image/png;base64,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";
@@ -203,7 +199,6 @@ const FIREBASE_CONFIG={
   appId:"1:1064841358060:web:d073087fce0c0e9f3453c9",
   measurementId:"G-NX6MZN7XW6"
 };
-const ADMIN_UID="M7Cc1K6w9mhZofC0yQ7YLDxzrlK2";
 let FB_READY=false,FB_ERROR="";
 try{if(window.firebase){if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);FB_READY=true;}else FB_ERROR="Firebase SDK did not load. Please refresh the page.";}catch(e){FB_ERROR=e.message||"Firebase setup error";}
 async function ensureCustomerAuth(){
@@ -218,46 +213,21 @@ async function saveCustomerOrder(){
 }
 let _w=null;
 function watchOrder(id){try{if(_w)_w.off();_w=firebase.database().ref("orders/"+id+"/status");_w.on("value",s=>{const v=s.val();if(v){S.live=v;if(S.view==="done")render()}})}catch(e){}}
-function showAdminLogin(){S.view="adminlogin";S.err="";render();}
-async function adminLogin(){
-  const email=$("#adminEmail")?.value.trim(),password=$("#adminPassword")?.value;
-  if(!email||!password){S.err="Enter Admin Email and Password.";return render();}
-  try{const c=await firebase.auth().signInWithEmailAndPassword(email,password);if(c.user.uid!==ADMIN_UID){await firebase.auth().signOut();throw new Error("This account is not authorized as the New Sindhu Catering Admin.");}IS_ADMIN=true;S.err="";go("adminhome");}
-  catch(e){S.err=e.message||"Admin login failed.";render();}
-}
-async function loadOrders(){
-  if(!IS_ADMIN||!firebase.auth().currentUser||firebase.auth().currentUser.uid!==ADMIN_UID){showAdminLogin();return;}
-  try{const snap=await firebase.database().ref("orders").orderByChild("createdAt").once("value");const arr=[];snap.forEach(x=>arr.push({id:x.key,...x.val()}));arr.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));S.orders=arr;S.err="";render();}
-  catch(e){S.err="Could not load orders: "+(e.message||e);render();}
-}
-async function updateOrderStatus(id,status){
-  if(!IS_ADMIN||firebase.auth().currentUser?.uid!==ADMIN_UID)return toast("Admin login required");
-  try{await firebase.database().ref("orders/"+id).update({status});const o=(S.orders||[]).find(x=>x.id===id);if(o)o.status=status;render();toast("Order status updated");}
-  catch(e){toast("Could not update order: "+(e.message||e));}
-}
 async function loadAvailability(){
   try{
-    const snap=await firebase.database().ref("menuAvailability").once("value");
-    const off=snap.val()||{}; OFF={}; S.adm=new Set();
-    M.forEach((c,ci)=>c[1].forEach((it,i)=>{const k=ci+"-"+i; if(off[k]===false){OFF[k]=true;S.adm.add(it[0]);}}));
-    if(S.view==="menu")render();
+    firebase.database().ref("menuAvailability").on("value",snap=>{
+      const off=snap.val()||{}; OFF={};
+      M.forEach((c,ci)=>c[1].forEach((it,i)=>{const k=ci+"-"+i; if(off[k]===false)OFF[k]=true;}));
+      if(S.view==="menu")render();
+    });
   }catch(e){console.warn("Availability could not be loaded",e);}
-}
-async function saveAvail(){
-  if(!IS_ADMIN||firebase.auth().currentUser?.uid!==ADMIN_UID)return toast("Admin login required");
-  if(S.admBusy)return;
-  const data={}; M.forEach((c,ci)=>c[1].forEach((it,i)=>{data[ci+"-"+i]=!S.adm.has(it[0]);}));
-  S.admBusy=true;render();
-  try{await firebase.database().ref("menuAvailability").set(data);OFF={};Object.keys(data).forEach(k=>{if(data[k]===false)OFF[k]=true;});toast("Availability saved successfully");}
-  catch(e){toast("Could not save availability: "+(e.message||e));}
-  finally{S.admBusy=false;if(S.view==="admin")render();}
 }
 function render(){
   const y=scrollY,hd=$("#hd"),app=$("#app"),bar=$("#bar");
   const back=t=>`<button class="back" data-a="go" data-v="${t}" aria-label="Back">←</button>`;
   bar.innerHTML="";
   if(S.view==="menu"){
-    hd.innerHTML=`<h1>New Sindhu Catering<small>Pure Veg. Pure Love. · Free delivery in Mangadu</small></h1>${IS_ADMIN?`<button class="adm" data-a="adminhome">Admin</button>`:`<button class="adm" data-a="adminlogin">Admin</button>`}`;
+    hd.innerHTML=`<h1>New Sindhu Catering<small>Pure Veg. Pure Love. · Free delivery in Mangadu</small></h1>`;
     app.innerHTML=(isOpen()?"":`<div class="banner closed"><b>The shop is closed right now</b>Opening hours: 7:30 AM – 10:30 PM</div>`)+
     `<div class="chips">${M.map((c,i)=>`<button class="chip" data-a="jump" data-v="${i}">${c[0]}</button>`).join("")}</div>`+
     M.map((c,ci)=>`<section class="sec" id="s${ci}"><h2>${c[0]}</h2></section><div class="grid">`+c[1].map((it,i)=>{
@@ -287,30 +257,6 @@ function render(){
     <label>Payment</label><div class="pay"><label><input type="radio" name="pay" value="Cash" ${S.f.pay==="Cash"?"checked":""}> Cash on delivery</label><label><input type="radio" name="pay" value="UPI" ${S.f.pay==="UPI"?"checked":""}> UPI (pay now)</label></div>
     <div class="err" id="err" role="alert">${esc(S.err)}</div></div>
     <button class="cta" data-a="place">Place order · ₹${total()}</button>`;
-  }else if(S.view==="adminlogin"){
-    hd.innerHTML=`${back("menu")}<h1>Admin Login</h1>`;
-    app.innerHTML=`<div class="card"><p class="meta">Authorized New Sindhu Catering administrator only.</p><label for="adminEmail">Admin Email</label><input id="adminEmail" type="email" autocomplete="username" placeholder="Enter Admin Email"><label for="adminPassword">Password</label><input id="adminPassword" type="password" autocomplete="current-password" placeholder="Enter Password"><div class="err" role="alert">${esc(S.err)}</div><button class="cta" data-a="adminlogin-submit">Login</button></div>`;
-  }else if(S.view==="orders"){
-    hd.innerHTML=`${back("menu")}<h1>Orders Dashboard</h1><button class="adm" data-a="logout">Logout</button>`;
-    const orders=S.orders||[];
-    const cards=orders.map(o=>{
-      const itemLines=(o.items||[]).map(i=>esc(i.name)+" × "+i.quantity+" — ₹"+i.amount).join("<br>");
-      const mapLink=o.mapLink?`<p><a href="${esc(o.mapLink)}" target="_blank" rel="noopener">Open customer map pin</a></p>`:"";
-      const gpsLink=o.gps?`<p><a href="https://maps.google.com/?q=${encodeURIComponent(o.gps)}" target="_blank" rel="noopener">Open GPS location</a></p>`:"";
-      return `<div class="card"><div class="row"><b>Order #${esc(o.id.slice(-6))}</b><b>₹${Number(o.total||0)}</b></div><div class="meta">${o.createdAt?new Date(o.createdAt).toLocaleString("en-IN"):"Time unavailable"}</div><p><b>${esc(o.customerName||"")}</b> · ${esc(o.mobile||"")}</p><p>${esc(o.address||"")}</p>${mapLink}${gpsLink}<p>${itemLines}</p><div class="meta">Payment: ${esc(o.paymentMethod||"")} · ${esc(o.paymentStatus||"")}</div><label>Order status</label><select data-order-status="${esc(o.id)}"><option ${o.status==="Pending"?"selected":""}>Pending</option><option ${o.status==="Accepted"?"selected":""}>Accepted</option><option ${o.status==="Preparing"?"selected":""}>Preparing</option><option ${o.status==="Out for Delivery"?"selected":""}>Out for Delivery</option><option ${o.status==="Delivered"?"selected":""}>Delivered</option><option ${o.status==="Cancelled"?"selected":""}>Cancelled</option></select><button class="cta alt" data-a="saveorderstatus" data-id="${esc(o.id)}">Update status</button></div>`;
-    }).join("");
-    app.innerHTML=`<div class="card"><div class="row"><b>Customer Orders</b><button class="cta alt" style="width:auto;margin:0;padding:8px 12px" data-a="refreshorders">Refresh</button></div><div class="meta">${orders.length} order(s) · newest first</div></div>`+(cards||`<div class="card">No orders found yet.</div>`)+`<div class="err" role="alert">${esc(S.err)}</div>`;
-  }else if(S.view==="adminhome"){
-    if(!IS_ADMIN){showAdminLogin();return;}
-    hd.innerHTML=`${back("menu")}<h1>Admin Dashboard</h1>`;
-    app.innerHTML=`<div class="card"><h2>Manage New Sindhu Catering</h2><button class="cta" data-a="orders">View Customer Orders</button><button class="cta alt" data-a="admin">Item Availability</button><button class="cta alt" data-a="logout">Logout</button></div>`;
-  }else if(S.view==="admin"){
-    if(!IS_ADMIN){showAdminLogin();return;}
-    hd.innerHTML=`${back("adminhome")}<h1>Item Availability<small>Turn items on or off</small></h1>`;
-    const all=M.reduce((a,c)=>a+c[1].length,0),nOff=S.adm.size;
-    app.innerHTML=`<div class="card"><div class="meta">Switch off the items that are not available today. Customers will see them greyed out as “Out of stock”. Then tap Save changes.</div><div class="meta" style="margin-top:8px"><b>${all-nOff}</b> available · <b>${nOff}</b> out of stock</div><button class="cta alt" style="margin:10px 0 0;width:100%" data-a="admall">Mark everything available</button></div>`+
-    M.map((c,ci)=>`<section class="sec"><h2>${c[0]}</h2></section><div class="card">`+c[1].map((it,i)=>{const on=!S.adm.has(it[0]);return`<div class="arow"><span>${esc(it[0])}</span><label class="sw"><input type="checkbox" data-a="admtog" data-n="${ci}-${i}" ${on?"checked":""} aria-label="${esc(it[0])} available"><span class="knob"></span></label></div>`}).join("")+`</div>`).join("");
-    bar.innerHTML=`<button class="bar" data-a="admsave" ${S.admBusy?"disabled":""}><span>${S.admBusy?"Saving…":"Save changes"}</span><span>${admDiff()} changed</span></button>`;
   }else{
     hd.innerHTML=`<h1>Order placed<small>New Sindhu Catering · Mangadu</small></h1>`;
     const st=S.live||"Pending";
@@ -336,11 +282,6 @@ document.addEventListener("click",e=>{
   const b=e.target.closest("[data-a]");if(!b)return;
   const a=b.dataset.a,d=b.dataset;
   if(a==="go"){readForm();go(d.v)}
-  else if(a==="admin"){if(!IS_ADMIN){showAdminLogin();return;}S.admBusy=false;go("admin")}
-  else if(a==="adminhome"){if(!IS_ADMIN){showAdminLogin();return;}go("adminhome")}
-  else if(a==="admtog"){const p=d.n.split("-").map(Number),nm=M[p[0]][1][p[1]][0];if(S.adm.has(nm))S.adm.delete(nm);else S.adm.add(nm);render()}
-  else if(a==="admall"){S.adm=new Set();render()}
-  else if(a==="admsave"){saveAvail()}
   else if(a==="jump"){$("#s"+d.v).scrollIntoView({behavior:"smooth",block:"start"})}
   else if(a==="chg"){const k=d.c+"-"+d.i,q=(S.cart[k]||0)+ +d.d;if(q<=0)delete S.cart[k];else S.cart[k]=q;render()}
   else if(a==="place"){
@@ -353,26 +294,14 @@ document.addEventListener("click",e=>{
     if(f.ml&&f.ml.trim()&&!/^https?:\/\/\S*(maps|goo\.gl)\S*$/i.test(f.ml.trim())){S.err="That does not look like a Google Maps link. In Google Maps tap Share → Copy link, then paste it here.";return render()}
     S.msg="New Sindhu Catering – New Order\n\nName: "+f.n.trim()+"\nMobile: "+f.p.trim()+"\nAddress: "+f.a.trim()+"\n\n"+rows().map(x=>"• "+x.n+" × "+x.q+" = ₹"+x.sum).join("\n")+"\n\nTotal: ₹"+total()+" (Delivery free)\nPayment: "+(f.pay==="UPI"?"UPI (paying now)":"Cash on delivery")+(f.ml&&f.ml.trim()?"\nMap pin: "+f.ml.trim():f.loc?"\nMap pin (GPS): https://maps.google.com/?q="+f.loc:"\nMap (from address, approximate): https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(f.a.trim()+", Mangadu, Chennai"));
     b.disabled=true;b.textContent="Saving order…";
-    saveCustomerOrder().then(id=>{S.live="Pending";watchOrder(id);go("done")}).catch(er=>{go("cart");S.err="Order could not be placed. Please check your internet and try again, or call "+SHOW+".";render()});
+    saveCustomerOrder().then(id=>{S.live="Pending";watchOrder(id);go("done")}).catch(er=>{go("cart");S.err="Order could not be placed ["+((er&&(er.code||er.message))||"unknown")+"]. Please check your internet and try again, or call "+SHOW+".";render()});
   }
-  else if(a==="adminlogin"){showAdminLogin()}
-  else if(a==="adminlogin-submit"){adminLogin()}
-  else if(a==="orders"){loadOrders()}
-  else if(a==="refreshorders"){loadOrders()}
-  else if(a==="logout"){firebase.auth().signOut().then(()=>{IS_ADMIN=false;S.orders=[];go("menu")})}
-  else if(a==="saveorderstatus"){const sel=document.querySelector(`[data-order-status="${CSS.escape(d.id)}"]`);if(sel)updateOrderStatus(d.id,sel.value)}
   else if(a==="loc"){readForm();if(!window.isSecureContext){S.err="Location requires a secure HTTPS page. Open the official https://rishi022008.github.io/newsindhu/ website in Chrome.";return render()}if(!navigator.geolocation){S.err="This browser does not provide GPS access. Open this website in Chrome, or paste a Google Maps pin link and enter your full address.";return render()}toast("Requesting location permission...");navigator.geolocation.getCurrentPosition(p=>{S.f.loc=p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6);S.err="";render();toast("Location added successfully")},er=>{if(er&&er.code===1){S.err="GPS permission is denied for this website. Open this page in Chrome (not inside another app). In Chrome, tap the icon left of the address → Permissions → Location → Allow. Also check Android Settings → Location is ON → Apps → Chrome → Permissions → Location → Allow only while using the app. Reload the page and try again. GPS permission cannot be forced by the website. You can still paste a Google Maps pin link or enter your full address; GPS is optional."}else if(er&&er.code===2){S.err="Phone location is unavailable. Turn ON Location in Android Quick Settings, move near a window or outdoors, and try again. Or paste a Google Maps pin link and enter your address."}else if(er&&er.code===3){S.err="Getting location took too long. Turn ON phone Location and try once more, or paste a Google Maps pin link and enter your address."}else{S.err="Could not get location. Open this site in Chrome and allow Location permission, or paste a Google Maps pin link and enter your address."}render()},{enableHighAccuracy:false,timeout:30000,maximumAge:120000})}
   else if(a==="payupi"){window.location.href=upiIntentUrl()}
   else if(a==="copyupi"){try{navigator.clipboard.writeText(UPI).then(()=>toast("UPI ID copied")).catch(()=>toast("UPI ID: "+UPI))}catch(x){toast("UPI ID: "+UPI)}}
   else if(a==="copy"){try{navigator.clipboard.writeText(S.msg).then(()=>toast("Copied")).catch(()=>toast("Press and hold the text above to copy it"))}catch(x){toast("Press and hold the text above to copy it")}}
   else if(a==="new"){if(_w){_w.off();_w=null}S.orderId=null;S.live="";S.cart={};S.f.pay="Cash";go("menu")}
 });
-function admDiff(){let n=0;M.forEach(c=>c[1].forEach(it=>{if(S.adm.has(it[0])!==(AVAIL.indexOf(it[0])>=0))n++}));return n}
-function buildDoc(names){
-  const css=document.getElementById("css").textContent;
-  const js=document.getElementById("main").textContent.replace(/\/\*A\*\/[\s\S]*?\/\*Z\*\//,()=>"/*A*/"+JSON.stringify(names)+"/*Z*/");
-  return DOC_PRE+css+DOC_MID+js+DOC_POST;
-}
 render();
 if(FB_READY)loadAvailability();
 </script>
