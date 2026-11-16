@@ -10,7 +10,7 @@
 <section id="login" class="panel"><div class="brand">NEW SINDHU CATERING</div><h2>Admin Login</h2><input id="email" type="email" value="rishi022008@gmail.com" autocomplete="username"><input id="password" type="password" placeholder="Admin password" autocomplete="current-password"><button id="loginBtn" style="width:100%">LOGIN</button><p id="loginMsg" class="error"></p></section>
 <section id="dashboard" hidden><div class="head"><div><div class="brand">NEW SINDHU CATERING</div><h2 style="margin:6px 0">Order Dashboard</h2><span class="muted" id="adminEmail"></span></div><button class="secondary" id="logoutBtn">LOGOUT</button></div>
 <div class="stats"><div class="stat">Total Orders<b id="total">0</b></div><div class="stat">Pending<b id="pending">0</b></div><div class="stat">Preparing<b id="preparing">0</b></div><div class="stat">Delivered<b id="delivered">0</b></div></div>
-<div class="tabs"><button id="tabOrders" class="on">ORDERS</button><button id="tabMenu">MENU ON/OFF</button></div><div id="ordersTab"><div class="panel"><div class="row"><h3 style="margin:0">Customer Orders</h3><button class="secondary" id="refreshBtn">REFRESH</button></div><p id="dbMsg" class="muted">Connecting to orders…</p><div id="orders"></div></div></div><div id="menuTab" hidden><div class="panel"><h3 style="margin-top:0">Menu Availability</h3><p class="muted">Switch OFF the items that are not available today. Customers will see them as Out of stock. Then tap SAVE CHANGES.</p><div id="menuList"></div><button id="saveMenu" style="width:100%;margin-top:14px">SAVE CHANGES</button><p id="menuMsg" class="muted"></p></div></div></section>
+<div class="panel" id="shopPanel"><div class="row"><div><h3 style="margin:0">Shop status</h3><p id="shopState" class="muted" style="margin:4px 0 0"></p></div><label class="sw"><input type="checkbox" id="shopSw" aria-label="Shop open"><span class="knob"></span></label></div><input id="shopMsg" placeholder="Message for customers (optional), e.g. Closed today for holiday" maxlength="80" style="margin-top:10px"><button id="shopSave" style="width:100%;margin-top:8px">SAVE SHOP STATUS</button></div><div class="tabs"><button id="tabOrders" class="on">ORDERS</button><button id="tabMenu">MENU ON/OFF</button></div><div id="ordersTab"><div class="panel"><div class="row"><h3 style="margin:0">Customer Orders</h3><button class="secondary" id="refreshBtn">REFRESH</button></div><p id="dbMsg" class="muted">Connecting to orders…</p><div id="orders"></div></div></div><div id="menuTab" hidden><div class="panel"><h3 style="margin-top:0">Menu Availability</h3><p class="muted">Switch OFF the items that are not available today. Customers will see them as Out of stock. Then tap SAVE CHANGES.</p><div id="menuList"></div><button id="saveMenu" style="width:100%;margin-top:14px">SAVE CHANGES</button><p id="menuMsg" class="muted"></p></div></div></section>
 </div>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
@@ -28,7 +28,7 @@ const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getDatabase(app);
 const $=id=>document.getElementById(id);let stopOrders=null,cache={};
 $('loginBtn').onclick=async()=>{ $('loginMsg').textContent='';try{await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(e){$('loginMsg').textContent=(e.code||'')+' '+e.message}};
 $('logoutBtn').onclick=()=>signOut(auth);$('refreshBtn').onclick=()=>{if(auth.currentUser)startOrders()};
-onAuthStateChanged(auth,user=>{if(user&&user.email?.toLowerCase()===ADMIN_EMAIL){$('login').hidden=true;$('dashboard').hidden=false;$('adminEmail').textContent=user.email;startOrders();startMenu()}else{$('dashboard').hidden=true;$('login').hidden=false;if(user)signOut(auth);if(stopOrders){stopOrders();stopOrders=null}if(stopMenu){stopMenu();stopMenu=null}}});
+onAuthStateChanged(auth,user=>{if(user&&user.email?.toLowerCase()===ADMIN_EMAIL){$('login').hidden=true;$('dashboard').hidden=false;$('adminEmail').textContent=user.email;startOrders();startMenu();startShop()}else{$('dashboard').hidden=true;$('login').hidden=false;if(user)signOut(auth);if(stopOrders){stopOrders();stopOrders=null}if(stopMenu){stopMenu();stopMenu=null}if(stopShop){stopShop();stopShop=null}}});
 const M=[["South Indian Food",["Idly (2 Nos)","Pongal","Poori (2 Nos)","Medhu Vada","Masala Vada","Sambar Idly (2 Nos)","Sambar Vada","Rava Kichadi","Aappam with Coconut Milk (2 Nos)"]],["Extra Parcel",["Vadacurry","Chenna Masala","Sambar 250 ml","Veg Kurma 250 ml"]],["Dosa Variety",["Kal Dosa (2 Nos)","Plain Dosa","Onion Dosa","Onion Uthappam","Ghee Dosa","Podi Dosa","Podi Kal Dosa (2 Nos)","Rava Dosa","Onion Rava Dosa","Ghee Rava Dosa"]],["Parotta Variety",["Parotta (2 Nos)","Chapathi (2 Nos)","Chilli Parotta","Veg Kothu Parotta","Paneer Chilli Parotta","Mushroom Chilli Parotta","Paneer Kothu Parotta","Mushroom Kothu Parotta"]],["Chinese Fried Rice",["Gobi Rice","Mushroom Rice","Paneer Rice","Mixed Fried Rice"]],["Chinese Starters",["Gobi65","Mushroom65","Paneer65","Gobi Manchurian [Dry/Gravy]","Mushroom Manchurian [Dry/Gravy]","Paneer Manchurian [Dry/Gravy]","Chilli Gobi [Dry/Gravy]","Chilli Mushroom [Dry/Gravy]","Chilli Paneer [Dry/Gravy]","Paneer Butter Masala"]]];
 let offSet=new Set(),stopMenu=null,seen=null,actx=null;
 const ensureAudio=()=>{try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume()}catch(e){}};
@@ -39,80 +39,13 @@ $('tabOrders').onclick=()=>showTab('orders');$('tabMenu').onclick=()=>showTab('m
 function startMenu(){if(stopMenu)stopMenu();stopMenu=onValue(ref(db,'menuAvailability'),snap=>{const v=snap.val()||{};offSet=new Set();M.forEach((c,ci)=>c[1].forEach((n,i)=>{if(v[ci+'-'+i]===false)offSet.add(ci+'-'+i)}));renderMenu()},err=>{$('menuMsg').textContent='Database error: '+err.message;$('menuMsg').className='error'})}
 function renderMenu(){$('menuList').innerHTML=M.map((c,ci)=>`<h4 style="margin:14px 0 4px;color:#4ade80">${esc(c[0])}</h4>`+c[1].map((n,i)=>{const k=ci+'-'+i,on=!offSet.has(k);return `<div class="arow ${on?'':'off'}"><span>${esc(n)}</span><label class="sw"><input type="checkbox" data-k="${k}" ${on?'checked':''} aria-label="${esc(n)} available"><span class="knob"></span></label></div>`}).join('')).join('');$('menuList').querySelectorAll('input[data-k]').forEach(cb=>cb.onchange=()=>{if(cb.checked)offSet.delete(cb.dataset.k);else offSet.add(cb.dataset.k);cb.closest('.arow').classList.toggle('off',!cb.checked)})}
 $('saveMenu').onclick=async()=>{const data={};M.forEach((c,ci)=>c[1].forEach((n,i)=>{data[ci+'-'+i]=!offSet.has(ci+'-'+i)}));try{await set(ref(db,'menuAvailability'),data);$('menuMsg').textContent='Saved ✓ Customers will see the change now.';$('menuMsg').className='success'}catch(e){$('menuMsg').textContent='Could not save: '+e.message;$('menuMsg').className='error'}};
+let stopShop=null;
+function startShop(){if(stopShop)stopShop();stopShop=onValue(ref(db,'shopStatus'),s=>{const v=s.val()||{},open=v.open!==false;$('shopSw').checked=open;$('shopState').textContent=open?'OPEN · customers can order (7:30 AM – 10:30 PM)':'CLOSED · customers cannot order';$('shopState').style.color=open?'#4ade80':'#f87171';if(document.activeElement!==$('shopMsg'))$('shopMsg').value=v.msg||''},err=>{$('shopState').textContent='Database error: '+err.message;$('shopState').style.color='#f87171'})}
+async function saveShop(){try{await set(ref(db,'shopStatus'),{open:$('shopSw').checked,msg:$('shopMsg').value.trim(),updatedAt:Date.now()})}catch(e){$('shopState').textContent='Could not save: '+e.message;$('shopState').style.color='#f87171'}}
+$('shopSw').onchange=saveShop;$('shopSave').onclick=saveShop;
 function pick(o,keys){for(const k of keys){if(o[k]!==undefined&&o[k]!==null&&o[k]!=='')return o[k]}return '—'}
 function startOrders(){if(stopOrders)stopOrders();$('dbMsg').textContent='Loading orders…';seen=null;stopOrders=onValue(ref(db,'orders'),snap=>{cache=snap.val()||{};const ids=Object.keys(cache);if(seen===null){seen=new Set(ids)}else{let fresh=false;ids.forEach(id=>{if(!seen.has(id)){seen.add(id);fresh=true}});if(fresh)beep()}render()},err=>{$('dbMsg').textContent='Database error: '+err.message;$('dbMsg').className='error'})}
 function render(){const list=Object.entries(cache).map(([id,o])=>({id,...(o||{})})).sort((a,b)=>(Number(b.createdAt||b.timestamp||0)-Number(a.createdAt||a.timestamp||0)));$('total').textContent=list.length;$('pending').textContent=list.filter(o=>(o.orderStatus||o.status||'Pending')==='Pending').length;$('preparing').textContent=list.filter(o=>(o.orderStatus||o.status)==='Preparing').length;$('delivered').textContent=list.filter(o=>(o.orderStatus||o.status)==='Delivered').length;$('dbMsg').textContent=list.length?'Live orders from Firebase':'No orders found yet';$('dbMsg').className='muted';$('orders').innerHTML='';if(!list.length){$('orders').innerHTML='<div class="empty">No customer orders yet</div>';return}for(const o of list){const status=pick(o,['orderStatus','status']);const name=pick(o,['customerName','name','Customer Name']);const phone=pick(o,['mobileNumber','phone','mobile','Mobile Number']);const address=pick(o,['address','deliveryAddress','Address']);const items=pick(o,['orderedItems','items','products','Ordered Items']);const amount=pick(o,['amount','totalAmount','total','Amount']);const payment=pick(o,['paymentMethod','Payment Method']);const div=document.createElement('article');div.className='order';const safe=Array.isArray(items)?items.map(i=>(i&&typeof i==='object')?`${i.name} × ${i.quantity} — ₹${i.amount}`:String(i)).join('\n'):(typeof items==='string'?items:JSON.stringify(items,null,2));div.innerHTML=`<div class="row"><h3>Order #${o.id.slice(-7)}</h3><span class="pill">${status}</span></div><p><b>Customer:</b> ${esc(name)}<br><b>Mobile:</b> ${esc(phone)}<br><b>Address:</b> ${esc(address)}${o.mapLink?`<br><a class="link" href="${esc(o.mapLink)}" target="_blank" rel="noopener">📍 Open map pin</a>`:''}${o.gps?`<br><a class="link" href="https://maps.google.com/?q=${encodeURIComponent(o.gps)}" target="_blank" rel="noopener">📍 GPS location</a>`:''}</p><p class="items"><b>Items:</b> ${esc(safe)}<br><b>Amount:</b> ₹${esc(amount)}<br><b>Payment:</b> ${esc(payment)}${o.paymentStatus?' · '+esc(o.paymentStatus):''}</p><div class="actions"><button data-act="Accepted">ACCEPT</button><button class="reject" data-act="Rejected">REJECT</button><select aria-label="Change order status"><option ${status==='Pending'?'selected':''}>Pending</option><option ${status==='Accepted'?'selected':''}>Accepted</option><option ${status==='Preparing'?'selected':''}>Preparing</option><option ${status==='Ready'?'selected':''}>Ready</option><option ${status==='Out for Delivery'?'selected':''}>Out for Delivery</option><option ${status==='Delivered'?'selected':''}>Delivered</option><option ${status==='Rejected'?'selected':''}>Rejected</option></select><button class="secondary" data-act="select">UPDATE</button></div>`;div.querySelectorAll('button[data-act]').forEach(btn=>btn.onclick=()=>changeStatus(o.id,btn.dataset.act==='select'?div.querySelector('select').value:btn.dataset.act));$('orders').appendChild(div)}}
 function esc(v){return String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function changeStatus(id,status){try{await update(ref(db,'orders/'+id),{orderStatus:status,status:status,updatedAt:Date.now()});$('dbMsg').textContent='Order updated: '+status;$('dbMsg').className='success'}catch(e){alert('Could not update order: '+e.message)}}
-</script><!-- Auto Order Alarm System -->
-<audio id="orderRingtone" loop preload="auto">
-  <source src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" type="audio/ogg">
-  <source src="https://actions.google.com/sounds/v1/alarms/medium_bell_ringing_near.ogg" type="audio/ogg">
-</audio>
-
-<script>
-(function() {
-  const ringtone = document.getElementById("orderRingtone");
-  let alarmEnabled = false;
-  let lastOrderCount = null;
-
-  // 1. Create floating Alarm Bar at the bottom of the screen
-  const bar = document.createElement("div");
-  bar.style.cssText = "position:fixed; bottom:15px; right:15px; z-index:9999; display:flex; gap:10px;";
-
-  const enableBtn = document.createElement("button");
-  enableBtn.innerText = "🔔 Enable Order Alarm";
-  enableBtn.style.cssText = "background:#28a745; color:#fff; padding:12px 18px; border:none; border-radius:50px; font-weight:bold; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.3); cursor:pointer;";
-
-  const stopBtn = document.createElement("button");
-  stopBtn.innerText = "🔕 Stop Ringtone";
-  stopBtn.style.cssText = "display:none; background:#dc3545; color:#fff; padding:12px 18px; border:none; border-radius:50px; font-weight:bold; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.3); cursor:pointer;";
-
-  bar.appendChild(enableBtn);
-  bar.appendChild(stopBtn);
-  document.body.appendChild(bar);
-
-  // 2. Enable sound on button click
-  enableBtn.onclick = function() {
-    ringtone.play().then(() => {
-      ringtone.pause();
-      ringtone.currentTime = 0;
-      alarmEnabled = true;
-      enableBtn.innerText = "✅ Alarm Active";
-      enableBtn.style.background = "#198754";
-    }).catch(() => {
-      alert("Tap anywhere on the screen once and click Enable Order Alarm again.");
-    });
-  };
-
-  // 3. Stop ringtone button
-  stopBtn.onclick = function() {
-    ringtone.pause();
-    ringtone.currentTime = 0;
-    stopBtn.style.display = "none";
-  };
-
-  // 4. Automatically watch "Total Orders" number for new orders
-  setInterval(function() {
-    const boxes = document.querySelectorAll("div");
-    for (let box of boxes) {
-      if (box.textContent.includes("Total Orders")) {
-        const bTag = box.querySelector("b");
-        if (bTag) {
-          const currentCount = parseInt(bTag.textContent.trim(), 10);
-          if (!isNaN(currentCount)) {
-            if (lastOrderCount !== null && currentCount > lastOrderCount) {
-              if (alarmEnabled) {
-                ringtone.play();
-                stopBtn.style.display = "inline-block";
-              }
-            }
-            lastOrderCount = currentCount;
-          }
-          break;
-        }
-      }
-    }
-  }, 2000);
-})();
 </script></body></html>

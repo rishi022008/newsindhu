@@ -110,9 +110,6 @@ select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;b
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" href="logo.png">
-<link rel="apple-touch-icon" href="logo.png">
 </head>
 <body>
 <header id="hd"></header>
@@ -121,7 +118,7 @@ select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;b
 <script id="main">
 let OFF={};
 const AVAIL=/*A*/[]/*Z*/;
-const PHONE="9171193165",SHOW="91711 93165",UPI="9342094214@okbizaxis";
+const PHONE="9171193165",SHOW="91711 93165",UPI="rishiviji1410-5@okhdfcbank";
 const UPI_QR="data:image/png;base64,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";
 const M=[
 ["South Indian Food",[["Idly (2 Nos)",35],["Pongal",50],["Poori (2 Nos)",50],["Medhu Vada",15],["Masala Vada",15],["Sambar Idly (2 Nos)",55],["Sambar Vada",45],["Rava Kichadi",60],["Aappam with Coconut Milk (2 Nos)",60]]],
@@ -182,7 +179,7 @@ const S={view:"menu",cart:{},err:"",msg:"",saveWarning:"",orders:[],adm:new Set(
 const $=s=>document.querySelector(s);
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const now=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
-const isOpen=()=>now()>=450&&now()<=1350;
+let SHOP={open:true,msg:""};const isOpen=()=>SHOP.open!==false&&now()>=450&&now()<=1350;const closedBanner=()=>{const m=SHOP.open===false;return `<div class="banner closed"><b>${m?"The shop is closed today · இன்று கடை விடுமுறை":"The shop is closed right now"}</b>${m?(SHOP.msg?esc(SHOP.msg):"Please order again when we reopen."):"Opening hours: 7:30 AM – 10:30 PM"}</div>`};
 const eveOk=()=>now()>=1110&&now()<=1350;
 const rows=()=>Object.entries(S.cart).map(([k,q])=>{const[c,i]=k.split("-").map(Number);const it=M[c][1][i];return{k,q,n:it[0],sum:it[1]*q}});
 const count=()=>rows().reduce((a,x)=>a+x.q,0);
@@ -218,6 +215,7 @@ let _w=null;
 function watchOrder(id){try{if(_w)_w.off();_w=firebase.database().ref("orders/"+id+"/status");_w.on("value",s=>{const v=s.val();if(v){S.live=v;if(S.view==="done")render()}})}catch(e){}}
 async function loadAvailability(){
   try{
+    firebase.database().ref("shopStatus").on("value",s=>{const v=s.val()||{};SHOP={open:v.open!==false,msg:String(v.msg||"")};if(S.view==="cart")readForm();if(S.view==="menu"||S.view==="cart")render()});
     firebase.database().ref("menuAvailability").on("value",snap=>{
       const off=snap.val()||{}; OFF={};
       M.forEach((c,ci)=>c[1].forEach((it,i)=>{const k=ci+"-"+i; if(off[k]===false)OFF[k]=true;}));
@@ -231,7 +229,7 @@ function render(){
   bar.innerHTML="";
   if(S.view==="menu"){
     hd.innerHTML=`<h1>New Sindhu Catering<small>Pure Veg. Pure Love. · Free delivery in Mangadu</small></h1>`;
-    app.innerHTML=(isOpen()?"":`<div class="banner closed"><b>The shop is closed right now</b>Opening hours: 7:30 AM – 10:30 PM</div>`)+
+    app.innerHTML=(isOpen()?"":closedBanner())+
     `<div class="chips">${M.map((c,i)=>`<button class="chip" data-a="jump" data-v="${i}">${c[0]}</button>`).join("")}</div>`+
     M.map((c,ci)=>`<section class="sec" id="s${ci}"><h2>${c[0]}</h2></section><div class="grid">`+c[1].map((it,i)=>{
       const k=ci+"-"+i,q=S.cart[k]||0,off=!!OFF[k];
@@ -244,7 +242,7 @@ function render(){
     hd.innerHTML=`${back("menu")}<h1>Your cart</h1>`;
     const r=rows();
     if(!r.length){app.innerHTML=`<div class="empty">Your cart is empty.<br>Add something from the menu.</div><button class="cta" data-a="go" data-v="menu">View menu</button>`;return}
-    app.innerHTML=`<div class="card">${r.map(x=>`<div class="row"><span>${x.n} × ${x.q}</span><span>₹${x.sum}</span></div>`).join("")}
+    app.innerHTML=(isOpen()?"":closedBanner())+`<div class="card">${r.map(x=>`<div class="row"><span>${x.n} × ${x.q}</span><span>₹${x.sum}</span></div>`).join("")}
     <div class="row"><span>Delivery (Mangadu)</span><span class="free">Free</span></div>
     <div class="row total"><span>Total</span><span>₹${total()}</span></div></div>
     <div class="card"><label for="nm">Name</label><input id="nm" type="text" autocomplete="name" value="${esc(S.f.n)}">
@@ -286,9 +284,10 @@ document.addEventListener("click",e=>{
   const a=b.dataset.a,d=b.dataset;
   if(a==="go"){readForm();go(d.v)}
   else if(a==="jump"){$("#s"+d.v).scrollIntoView({behavior:"smooth",block:"start"})}
-  else if(a==="chg"){const k=d.c+"-"+d.i,q=(S.cart[k]||0)+ +d.d;if(q<=0)delete S.cart[k];else S.cart[k]=q;render()}
+  else if(a==="chg"){if(+d.d>0&&!isOpen()){scrollTo({top:0,behavior:"smooth"});return}const k=d.c+"-"+d.i,q=(S.cart[k]||0)+ +d.d;if(q<=0)delete S.cart[k];else S.cart[k]=q;render()}
   else if(a==="place"){
     readForm();
+    if(!isOpen()){S.err=SHOP.open===false?"The shop is closed today. Please order when we reopen.":"The shop is closed right now. Opening hours: 7:30 AM – 10:30 PM.";return render()}
     const bad=rows().filter(x=>OFF[x.k]);
     if(bad.length){S.err=bad.map(x=>x.n).join(", ")+" is out of stock. Please remove it from your cart.";return render()}
     const f=S.f;
@@ -307,42 +306,6 @@ document.addEventListener("click",e=>{
 });
 render();
 if(FB_READY)loadAvailability();
-</script>
-<!-- Auto Install App Banner -->
-<div id="pwaInstallBar" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:9999; background:#16a34a; color:#fff; padding:10px 18px; border-radius:50px; box-shadow:0 4px 14px rgba(0,0,0,0.4); align-items:center; gap:10px; font-family:Arial,sans-serif; width:max-content; max-width:92%;">
-  <span style="font-size:14px; font-weight:bold;">📲 New Sindhu App</span>
-  <button id="pwaInstallBtn" style="background:#fff; color:#16a34a; border:none; padding:6px 14px; border-radius:20px; font-weight:800; font-size:13px; cursor:pointer;">Install App</button>
-  <button onclick="document.getElementById('pwaInstallBar').style.display='none'" style="background:transparent; border:none; color:#fff; font-size:16px; cursor:pointer; padding:0 4px;">✕</button>
-</div>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-
-  let deferredPrompt;
-  const installBar = document.getElementById('pwaInstallBar');
-  const installBtn = document.getElementById('pwaInstallBtn');
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    installBar.style.display = 'flex';
-  });
-
-  installBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      installBar.style.display = 'none';
-    }
-    deferredPrompt = null;
-  });
-
-  window.addEventListener('appinstalled', () => {
-    installBar.style.display = 'none';
-  });
 </script>
 </body>
 </html>
