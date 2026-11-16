@@ -29,8 +29,8 @@
   .btn-pickup { background: #f59e0b; color: #000; grid-column: span 2; }
   .btn-deliver { background: #16a34a; color: #fff; grid-column: span 2; font-size: 16px; }
   .btn-sec { background: #475569; color: #fff; padding: 8px 12px; font-size: 13px; }
-  #loginBox { max-width: 380px; margin: 15vh auto; text-align: center; }
-  input { width: 100%; padding: 14px; margin: 12px 0; border-radius: 10px; border: 1px solid #64748b; background: #0f172a; color: #fff; font-size: 18px; text-align: center; letter-spacing: 4px; }
+  #loginBox { max-width: 400px; margin: 12vh auto; text-align: center; }
+  input { width: 100%; padding: 13px; margin: 8px 0; border-radius: 10px; border: 1px solid #64748b; background: #0f172a; color: #fff; font-size: 15px; }
   .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
   .tabs button { flex: 1; background: #334155; color: #cbd5e1; padding: 10px; }
   .tabs button.on { background: #0284c7; color: #fff; }
@@ -39,13 +39,13 @@
 </head>
 <body>
 <div class="wrap">
-  <!-- Delivery Boy PIN Login -->
+  <!-- Firebase Authorized Login -->
   <section id="loginBox" class="panel">
     <div class="brand">NEW SINDHU CATERING</div>
     <h3>Delivery Partner Login</h3>
-    <p class="sub">Enter 4-Digit Delivery PIN</p>
-    <input id="pinInput" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
-    <button id="loginBtn" style="width:100%; background:#0284c7; color:#fff;">OPEN DELIVERY APP</button>
+    <input id="email" type="email" value="rishi022008@gmail.com" placeholder="Delivery Email">
+    <input id="password" type="password" placeholder="Password">
+    <button id="loginBtn" style="width:100%; background:#0284c7; color:#fff; margin-top:8px;">LOGIN TO DELIVERY</button>
     <p id="loginErr" style="color:#fca5a5; font-size:14px;"></p>
   </section>
 
@@ -56,7 +56,7 @@
         <div class="brand">NEW SINDHU DELIVERY</div>
         <div class="sub" id="statusText">Connecting to orders...</div>
       </div>
-      <button class="btn-sec" id="logoutBtn">EXIT</button>
+      <button class="btn-sec" id="logoutBtn">LOGOUT</button>
     </div>
 
     <div class="tabs">
@@ -76,10 +76,8 @@
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 import { getDatabase, ref, onValue, update } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js';
-
-// Delivery Boy Login PIN (You can change '1234' to any 4-digit PIN)
-const DELIVERY_PIN = "1234";
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBWDKG9D_gk-5zGJyPmUuItaVcwaKPMciw',
@@ -93,6 +91,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getDatabase(app);
 const $ = id => document.getElementById(id);
 
@@ -100,39 +99,40 @@ let allOrders = [];
 let currentTab = 'active';
 let knownReadyIds = null;
 let alarmEnabled = false;
+let stopListener = null;
 const ringtone = $('deliveryRingtone');
 
-// Check saved login
-if (localStorage.getItem('nsc_delivery_auth') === 'true') {
-  showApp();
-}
-
-$('loginBtn').onclick = () => {
-  if ($('pinInput').value.trim() === DELIVERY_PIN) {
-    localStorage.setItem('nsc_delivery_auth', 'true');
-    showApp();
-  } else {
-    $('loginErr').textContent = 'Wrong PIN. Try again.';
+$('loginBtn').onclick = async () => {
+  $('loginErr').textContent = '';
+  try {
+    await signInWithEmailAndPassword(auth, $('email').value.trim(), $('password').value);
+  } catch (e) {
+    $('loginErr').textContent = 'Login failed: ' + e.message;
   }
 };
 
-$('logoutBtn').onclick = () => {
-  localStorage.removeItem('nsc_delivery_auth');
-  location.reload();
-};
+$('logoutBtn').onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    $('loginBox').hidden = true;
+    $('appBox').hidden = false;
+    setupAlarmBar();
+    listenOrders();
+  } else {
+    $('appBox').hidden = true;
+    $('loginBox').hidden = false;
+    if (stopListener) { stopListener(); stopListener = null; }
+  }
+});
 
 $('tabActive').onclick = () => { currentTab = 'active'; $('tabActive').className = 'on'; $('tabDone').className = ''; renderOrders(); };
 $('tabDone').onclick = () => { currentTab = 'done'; $('tabDone').className = 'on'; $('tabActive').className = ''; renderOrders(); };
 
-function showApp() {
-  $('loginBox').hidden = true;
-  $('appBox').hidden = false;
-  setupAlarmBar();
-  listenOrders();
-}
-
 function setupAlarmBar() {
+  if (document.getElementById('alarmBar')) return;
   const bar = document.createElement("div");
+  bar.id = "alarmBar";
   bar.style.cssText = "position:fixed; bottom:15px; right:15px; z-index:9999; display:flex; gap:10px;";
 
   const enableBtn = document.createElement("button");
@@ -177,13 +177,13 @@ function esc(v) {
 }
 
 function listenOrders() {
-  onValue(ref(db, 'orders'), snap => {
+  if (stopListener) stopListener();
+  stopListener = onValue(ref(db, 'orders'), snap => {
     const data = snap.val() || {};
     allOrders = Object.entries(data)
       .map(([id, o]) => ({ id, ...(o || {}) }))
       .sort((a, b) => Number(b.createdAt || b.timestamp || 0) - Number(a.createdAt || a.timestamp || 0));
 
-    // Check for new Ready / Out for Delivery orders to trigger ringtone
     const activeDeliveryOrders = allOrders.filter(o => {
       const st = o.orderStatus || o.status;
       return st === 'Ready' || st === 'Out for Delivery';
@@ -242,7 +242,6 @@ function renderOrders() {
       ? items.map(i => (i && typeof i === 'object') ? `${i.name} × ${i.quantity}` : String(i)).join('\n')
       : (typeof items === 'string' ? items : JSON.stringify(items));
 
-    // Determine best map link
     let mapUrl = '';
     if (o.mapLink) mapUrl = o.mapLink;
     else if (o.gps) mapUrl = `https://maps.google.com/?q=${encodeURIComponent(o.gps)}`;
@@ -295,7 +294,6 @@ async function updateDeliveryStatus(orderId, newStatus) {
       status: newStatus,
       updatedAt: Date.now()
     });
-    // Stop ringtone automatically once order is picked up or delivered
     ringtone.pause();
     ringtone.currentTime = 0;
     const stopBtn = $('stopDeliveryAlarm');
