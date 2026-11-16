@@ -110,6 +110,9 @@ select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;b
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
 </head>
 <body>
 <header id="hd"></header>
@@ -304,6 +307,42 @@ document.addEventListener("click",e=>{
 });
 render();
 if(FB_READY)loadAvailability();
+</script>
+<!-- Auto Install App Banner -->
+<div id="pwaInstallBar" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:9999; background:#16a34a; color:#fff; padding:10px 18px; border-radius:50px; box-shadow:0 4px 14px rgba(0,0,0,0.4); align-items:center; gap:10px; font-family:Arial,sans-serif; width:max-content; max-width:92%;">
+  <span style="font-size:14px; font-weight:bold;">📲 New Sindhu App</span>
+  <button id="pwaInstallBtn" style="background:#fff; color:#16a34a; border:none; padding:6px 14px; border-radius:20px; font-weight:800; font-size:13px; cursor:pointer;">Install App</button>
+  <button onclick="document.getElementById('pwaInstallBar').style.display='none'" style="background:transparent; border:none; color:#fff; font-size:16px; cursor:pointer; padding:0 4px;">✕</button>
+</div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+
+  let deferredPrompt;
+  const installBar = document.getElementById('pwaInstallBar');
+  const installBtn = document.getElementById('pwaInstallBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBar.style.display = 'flex';
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      installBar.style.display = 'none';
+    }
+    deferredPrompt = null;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    installBar.style.display = 'none';
+  });
 </script>
 </body>
 </html>
