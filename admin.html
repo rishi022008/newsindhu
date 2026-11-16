@@ -44,4 +44,75 @@ function startOrders(){if(stopOrders)stopOrders();$('dbMsg').textContent='Loadin
 function render(){const list=Object.entries(cache).map(([id,o])=>({id,...(o||{})})).sort((a,b)=>(Number(b.createdAt||b.timestamp||0)-Number(a.createdAt||a.timestamp||0)));$('total').textContent=list.length;$('pending').textContent=list.filter(o=>(o.orderStatus||o.status||'Pending')==='Pending').length;$('preparing').textContent=list.filter(o=>(o.orderStatus||o.status)==='Preparing').length;$('delivered').textContent=list.filter(o=>(o.orderStatus||o.status)==='Delivered').length;$('dbMsg').textContent=list.length?'Live orders from Firebase':'No orders found yet';$('dbMsg').className='muted';$('orders').innerHTML='';if(!list.length){$('orders').innerHTML='<div class="empty">No customer orders yet</div>';return}for(const o of list){const status=pick(o,['orderStatus','status']);const name=pick(o,['customerName','name','Customer Name']);const phone=pick(o,['mobileNumber','phone','mobile','Mobile Number']);const address=pick(o,['address','deliveryAddress','Address']);const items=pick(o,['orderedItems','items','products','Ordered Items']);const amount=pick(o,['amount','totalAmount','total','Amount']);const payment=pick(o,['paymentMethod','Payment Method']);const div=document.createElement('article');div.className='order';const safe=Array.isArray(items)?items.map(i=>(i&&typeof i==='object')?`${i.name} × ${i.quantity} — ₹${i.amount}`:String(i)).join('\n'):(typeof items==='string'?items:JSON.stringify(items,null,2));div.innerHTML=`<div class="row"><h3>Order #${o.id.slice(-7)}</h3><span class="pill">${status}</span></div><p><b>Customer:</b> ${esc(name)}<br><b>Mobile:</b> ${esc(phone)}<br><b>Address:</b> ${esc(address)}${o.mapLink?`<br><a class="link" href="${esc(o.mapLink)}" target="_blank" rel="noopener">📍 Open map pin</a>`:''}${o.gps?`<br><a class="link" href="https://maps.google.com/?q=${encodeURIComponent(o.gps)}" target="_blank" rel="noopener">📍 GPS location</a>`:''}</p><p class="items"><b>Items:</b> ${esc(safe)}<br><b>Amount:</b> ₹${esc(amount)}<br><b>Payment:</b> ${esc(payment)}${o.paymentStatus?' · '+esc(o.paymentStatus):''}</p><div class="actions"><button data-act="Accepted">ACCEPT</button><button class="reject" data-act="Rejected">REJECT</button><select aria-label="Change order status"><option ${status==='Pending'?'selected':''}>Pending</option><option ${status==='Accepted'?'selected':''}>Accepted</option><option ${status==='Preparing'?'selected':''}>Preparing</option><option ${status==='Ready'?'selected':''}>Ready</option><option ${status==='Out for Delivery'?'selected':''}>Out for Delivery</option><option ${status==='Delivered'?'selected':''}>Delivered</option><option ${status==='Rejected'?'selected':''}>Rejected</option></select><button class="secondary" data-act="select">UPDATE</button></div>`;div.querySelectorAll('button[data-act]').forEach(btn=>btn.onclick=()=>changeStatus(o.id,btn.dataset.act==='select'?div.querySelector('select').value:btn.dataset.act));$('orders').appendChild(div)}}
 function esc(v){return String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function changeStatus(id,status){try{await update(ref(db,'orders/'+id),{orderStatus:status,status:status,updatedAt:Date.now()});$('dbMsg').textContent='Order updated: '+status;$('dbMsg').className='success'}catch(e){alert('Could not update order: '+e.message)}}
+</script><!-- Auto Order Alarm System -->
+<audio id="orderRingtone" loop preload="auto">
+  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
+  <source src="https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg" type="audio/ogg">
+</audio>
+
+<script>
+(function() {
+  const ringtone = document.getElementById("orderRingtone");
+  let alarmEnabled = false;
+  let lastOrderCount = null;
+
+  // 1. Create floating Alarm Bar at the bottom of the screen
+  const bar = document.createElement("div");
+  bar.style.cssText = "position:fixed; bottom:15px; right:15px; z-index:9999; display:flex; gap:10px;";
+
+  const enableBtn = document.createElement("button");
+  enableBtn.innerText = "🔔 Enable Order Alarm";
+  enableBtn.style.cssText = "background:#28a745; color:#fff; padding:12px 18px; border:none; border-radius:50px; font-weight:bold; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.3); cursor:pointer;";
+
+  const stopBtn = document.createElement("button");
+  stopBtn.innerText = "🔕 Stop Ringtone";
+  stopBtn.style.cssText = "display:none; background:#dc3545; color:#fff; padding:12px 18px; border:none; border-radius:50px; font-weight:bold; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.3); cursor:pointer;";
+
+  bar.appendChild(enableBtn);
+  bar.appendChild(stopBtn);
+  document.body.appendChild(bar);
+
+  // 2. Enable sound on button click
+  enableBtn.onclick = function() {
+    ringtone.play().then(() => {
+      ringtone.pause();
+      ringtone.currentTime = 0;
+      alarmEnabled = true;
+      enableBtn.innerText = "✅ Alarm Active";
+      enableBtn.style.background = "#198754";
+    }).catch(() => {
+      alert("Tap anywhere on the screen once and click Enable Order Alarm again.");
+    });
+  };
+
+  // 3. Stop ringtone button
+  stopBtn.onclick = function() {
+    ringtone.pause();
+    ringtone.currentTime = 0;
+    stopBtn.style.display = "none";
+  };
+
+  // 4. Automatically watch "Total Orders" number for new orders
+  setInterval(function() {
+    const boxes = document.querySelectorAll("div");
+    for (let box of boxes) {
+      if (box.textContent.includes("Total Orders")) {
+        const bTag = box.querySelector("b");
+        if (bTag) {
+          const currentCount = parseInt(bTag.textContent.trim(), 10);
+          if (!isNaN(currentCount)) {
+            if (lastOrderCount !== null && currentCount > lastOrderCount) {
+              if (alarmEnabled) {
+                ringtone.play();
+                stopBtn.style.display = "inline-block";
+              }
+            }
+            lastOrderCount = currentCount;
+          }
+          break;
+        }
+      }
+    }
+  }, 2000);
+})();
 </script></body></html>
