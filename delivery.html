@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>New Sindhu Catering - Delivery Partner</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0f172a; color: #f8fafc; font-family: Arial, sans-serif; padding: 16px; padding-bottom: 80px; }
+  .wrap { max-width: 600px; margin: auto; }
+  .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .brand { color: #38bdf8; font-weight: 800; font-size: 20px; }
+  .sub { color: #94a3b8; font-size: 13px; }
+  .panel, .card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 14px; border: 1px solid #334155; }
+  .card.ready { border-left: 6px solid #f59e0b; }
+  .card.out { border-left: 6px solid #38bdf8; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .pill { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #334155; color: #fff; }
+  .pill.ready { background: #b45309; color: #fef3c7; }
+  .pill.out { background: #0369a1; color: #e0f2fe; }
+  .amount-box { background: #0f172a; padding: 10px 12px; border-radius: 10px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+  .amount { font-size: 20px; font-weight: 800; color: #4ade80; }
+  .pay-badge { font-size: 13px; font-weight: bold; padding: 4px 8px; border-radius: 6px; background: #334155; }
+  .items { background: #0f172a; padding: 10px; border-radius: 8px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; color: #e2e8f0; margin: 8px 0; }
+  .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  button, a.btn { border: 0; border-radius: 10px; padding: 13px 12px; font-weight: 700; font-size: 15px; cursor: pointer; text-align: center; text-decoration: none; display: inline-block; }
+  .btn-call { background: #2563eb; color: #fff; }
+  .btn-map { background: #0d9488; color: #fff; }
+  .btn-pickup { background: #f59e0b; color: #000; grid-column: span 2; }
+  .btn-deliver { background: #16a34a; color: #fff; grid-column: span 2; font-size: 16px; }
+  .btn-sec { background: #475569; color: #fff; padding: 8px 12px; font-size: 13px; }
+  #loginBox { max-width: 380px; margin: 15vh auto; text-align: center; }
+  input { width: 100%; padding: 14px; margin: 12px 0; border-radius: 10px; border: 1px solid #64748b; background: #0f172a; color: #fff; font-size: 18px; text-align: center; letter-spacing: 4px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tabs button { flex: 1; background: #334155; color: #cbd5e1; padding: 10px; }
+  .tabs button.on { background: #0284c7; color: #fff; }
+  .empty { text-align: center; padding: 40px 16px; color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Delivery Boy PIN Login -->
+  <section id="loginBox" class="panel">
+    <div class="brand">NEW SINDHU CATERING</div>
+    <h3>Delivery Partner Login</h3>
+    <p class="sub">Enter 4-Digit Delivery PIN</p>
+    <input id="pinInput" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+    <button id="loginBtn" style="width:100%; background:#0284c7; color:#fff;">OPEN DELIVERY APP</button>
+    <p id="loginErr" style="color:#fca5a5; font-size:14px;"></p>
+  </section>
+
+  <!-- Main Delivery Dashboard -->
+  <section id="appBox" hidden>
+    <div class="head">
+      <div>
+        <div class="brand">NEW SINDHU DELIVERY</div>
+        <div class="sub" id="statusText">Connecting to orders...</div>
+      </div>
+      <button class="btn-sec" id="logoutBtn">EXIT</button>
+    </div>
+
+    <div class="tabs">
+      <button id="tabActive" class="on">ACTIVE (<span id="activeCount">0</span>)</button>
+      <button id="tabDone">DELIVERED TODAY (<span id="doneCount">0</span>)</button>
+    </div>
+
+    <div id="ordersList"></div>
+  </section>
+</div>
+
+<!-- Loud Delivery Ringtone -->
+<audio id="deliveryRingtone" loop preload="auto">
+  <source src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" type="audio/ogg">
+  <source src="https://actions.google.com/sounds/v1/alarms/medium_bell_ringing_near.ogg" type="audio/ogg">
+</audio>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+import { getDatabase, ref, onValue, update } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js';
+
+// Delivery Boy Login PIN (You can change '1234' to any 4-digit PIN)
+const DELIVERY_PIN = "1234";
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyBWDKG9D_gk-5zGJyPmUuItaVcwaKPMciw',
+  authDomain: 'new-sindhu-catering.firebaseapp.com',
+  databaseURL: 'https://new-sindhu-catering-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'new-sindhu-catering',
+  storageBucket: 'new-sindhu-catering.firebasestorage.app',
+  messagingSenderId: '1064841358060',
+  appId: '1:1064841358060:web:d073087fce0c0e9f3453c9',
+  measurementId: 'G-NX6MZN7XW6'
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const $ = id => document.getElementById(id);
+
+let allOrders = [];
+let currentTab = 'active';
+let knownReadyIds = null;
+let alarmEnabled = false;
+const ringtone = $('deliveryRingtone');
+
+// Check saved login
+if (localStorage.getItem('nsc_delivery_auth') === 'true') {
+  showApp();
+}
+
+$('loginBtn').onclick = () => {
+  if ($('pinInput').value.trim() === DELIVERY_PIN) {
+    localStorage.setItem('nsc_delivery_auth', 'true');
+    showApp();
+  } else {
+    $('loginErr').textContent = 'Wrong PIN. Try again.';
+  }
+};
+
+$('logoutBtn').onclick = () => {
+  localStorage.removeItem('nsc_delivery_auth');
+  location.reload();
+};
+
+$('tabActive').onclick = () => { currentTab = 'active'; $('tabActive').className = 'on'; $('tabDone').className = ''; renderOrders(); };
+$('tabDone').onclick = () => { currentTab = 'done'; $('tabDone').className = 'on'; $('tabActive').className = ''; renderOrders(); };
+
+function showApp() {
+  $('loginBox').hidden = true;
+  $('appBox').hidden = false;
+  setupAlarmBar();
+  listenOrders();
+}
+
+function setupAlarmBar() {
+  const bar = document.createElement("div");
+  bar.style.cssText = "position:fixed; bottom:15px; right:15px; z-index:9999; display:flex; gap:10px;";
+
+  const enableBtn = document.createElement("button");
+  enableBtn.innerText = "🔔 Enable Delivery Alarm";
+  enableBtn.style.cssText = "background:#0284c7; color:#fff; padding:12px 18px; border:none; border-radius:50px; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(0,0,0,0.4);";
+
+  const stopBtn = document.createElement("button");
+  stopBtn.id = "stopDeliveryAlarm";
+  stopBtn.innerText = "🔕 Stop Sound";
+  stopBtn.style.cssText = "display:none; background:#dc2626; color:#fff; padding:12px 18px; border:none; border-radius:50px; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(0,0,0,0.4);";
+
+  enableBtn.onclick = () => {
+    ringtone.play().then(() => {
+      ringtone.pause();
+      ringtone.currentTime = 0;
+      alarmEnabled = true;
+      enableBtn.innerText = "✅ Alarm Ready";
+      enableBtn.style.background = "#16a34a";
+    }).catch(() => alert("Tap screen once and click again."));
+  };
+
+  stopBtn.onclick = () => {
+    ringtone.pause();
+    ringtone.currentTime = 0;
+    stopBtn.style.display = "none";
+  };
+
+  bar.appendChild(enableBtn);
+  bar.appendChild(stopBtn);
+  document.body.appendChild(bar);
+}
+
+function pick(o, keys) {
+  for (const k of keys) {
+    if (o[k] !== undefined && o[k] !== null && o[k] !== '') return o[k];
+  }
+  return '—';
+}
+
+function esc(v) {
+  return String(v ?? '—').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function listenOrders() {
+  onValue(ref(db, 'orders'), snap => {
+    const data = snap.val() || {};
+    allOrders = Object.entries(data)
+      .map(([id, o]) => ({ id, ...(o || {}) }))
+      .sort((a, b) => Number(b.createdAt || b.timestamp || 0) - Number(a.createdAt || a.timestamp || 0));
+
+    // Check for new Ready / Out for Delivery orders to trigger ringtone
+    const activeDeliveryOrders = allOrders.filter(o => {
+      const st = o.orderStatus || o.status;
+      return st === 'Ready' || st === 'Out for Delivery';
+    });
+
+    const currentIds = new Set(activeDeliveryOrders.map(o => o.id));
+    if (knownReadyIds !== null) {
+      let hasNew = false;
+      currentIds.forEach(id => { if (!knownReadyIds.has(id)) hasNew = true; });
+      if (hasNew && alarmEnabled) {
+        ringtone.play();
+        const stopBtn = $('stopDeliveryAlarm');
+        if (stopBtn) stopBtn.style.display = 'inline-block';
+      }
+    }
+    knownReadyIds = currentIds;
+
+    $('statusText').textContent = 'Live • Connected to Kitchen';
+    renderOrders();
+  }, err => {
+    $('statusText').textContent = 'Error: ' + err.message;
+  });
+}
+
+function renderOrders() {
+  const activeList = allOrders.filter(o => {
+    const st = o.orderStatus || o.status;
+    return st === 'Ready' || st === 'Out for Delivery';
+  });
+
+  const doneList = allOrders.filter(o => (o.orderStatus || o.status) === 'Delivered');
+
+  $('activeCount').textContent = activeList.length;
+  $('doneCount').textContent = doneList.length;
+
+  const listToShow = currentTab === 'active' ? activeList : doneList;
+  const container = $('ordersList');
+  container.innerHTML = '';
+
+  if (!listToShow.length) {
+    container.innerHTML = `<div class="empty">${currentTab === 'active' ? 'No orders ready for delivery right now.' : 'No delivered orders yet.'}</div>`;
+    return;
+  }
+
+  for (const o of listToShow) {
+    const status = pick(o, ['orderStatus', 'status']);
+    const name = pick(o, ['customerName', 'name', 'Customer Name']);
+    const phone = pick(o, ['mobileNumber', 'phone', 'mobile', 'Mobile Number']);
+    const address = pick(o, ['address', 'deliveryAddress', 'Address']);
+    const items = pick(o, ['orderedItems', 'items', 'products', 'Ordered Items']);
+    const amount = pick(o, ['amount', 'totalAmount', 'total', 'Amount']);
+    const payment = pick(o, ['paymentMethod', 'Payment Method']);
+    const payStatus = o.paymentStatus ? ` (${o.paymentStatus})` : '';
+
+    const safeItems = Array.isArray(items)
+      ? items.map(i => (i && typeof i === 'object') ? `${i.name} × ${i.quantity}` : String(i)).join('\n')
+      : (typeof items === 'string' ? items : JSON.stringify(items));
+
+    // Determine best map link
+    let mapUrl = '';
+    if (o.mapLink) mapUrl = o.mapLink;
+    else if (o.gps) mapUrl = `https://maps.google.com/?q=${encodeURIComponent(o.gps)}`;
+    else if (address !== '—') mapUrl = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+
+    const cleanPhone = String(phone).replace(/[^0-9+]/g, '');
+    const cardClass = status === 'Ready' ? 'ready' : (status === 'Out for Delivery' ? 'out' : '');
+    const pillClass = status === 'Ready' ? 'ready' : (status === 'Out for Delivery' ? 'out' : '');
+
+    const card = document.createElement('div');
+    card.className = `card ${cardClass}`;
+    card.innerHTML = `
+      <div class="row">
+        <strong style="font-size:17px;">Order #${o.id.slice(-7)}</strong>
+        <span class="pill ${pillClass}">${esc(status)}</span>
+      </div>
+      <p style="margin:10px 0 6px; line-height:1.5;">
+        <b>👤 Customer:</b> ${esc(name)}<br>
+        <b>📞 Phone:</b> ${esc(phone)}<br>
+        <b>📍 Address:</b> ${esc(address)}
+      </p>
+      <div class="items">${esc(safeItems)}</div>
+      <div class="amount-box">
+        <span class="amount">₹${esc(amount)}</span>
+        <span class="pay-badge">${esc(payment)}${esc(payStatus)}</span>
+      </div>
+      ${currentTab === 'active' ? `
+        <div class="btn-grid">
+          ${cleanPhone ? `<a class="btn btn-call" href="tel:${esc(cleanPhone)}">📞 Call Customer</a>` : ''}
+          ${mapUrl ? `<a class="btn btn-map" href="${esc(mapUrl)}" target="_blank" rel="noopener">🗺️ Open Map</a>` : ''}
+          ${status === 'Ready' ? `<button class="btn-pickup" data-id="${o.id}" data-next="Out for Delivery">🛵 Picked Up (Out for Delivery)</button>` : ''}
+          <button class="btn-deliver" data-id="${o.id}" data-next="Delivered">✅ Mark as Delivered</button>
+        </div>
+      ` : ''}
+    `;
+
+    card.querySelectorAll('button[data-next]').forEach(btn => {
+      btn.onclick = () => updateDeliveryStatus(btn.dataset.id, btn.dataset.next);
+    });
+
+    container.appendChild(card);
+  }
+}
+
+async function updateDeliveryStatus(orderId, newStatus) {
+  if (!confirm(`Confirm status change to "${newStatus}"?`)) return;
+  try {
+    await update(ref(db, 'orders/' + orderId), {
+      orderStatus: newStatus,
+      status: newStatus,
+      updatedAt: Date.now()
+    });
+    // Stop ringtone automatically once order is picked up or delivered
+    ringtone.pause();
+    ringtone.currentTime = 0;
+    const stopBtn = $('stopDeliveryAlarm');
+    if (stopBtn) stopBtn.style.display = 'none';
+  } catch (e) {
+    alert('Failed to update: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>
