@@ -216,6 +216,8 @@ async function saveCustomerOrder(){
   const order={customerUid:user.uid,customerName:S.f.n.trim(),mobile:S.f.p.trim(),address:S.f.a.trim(),mapLink:S.f.ml||"",gps:S.f.loc||"",items:rows().map(x=>({name:x.n,quantity:x.q,amount:x.sum})),total:total(),paymentMethod:S.f.pay,paymentStatus:S.f.pay==="UPI"?"Unverified":"Pending",status:"Pending",message:S.msg,createdAt:firebase.database.ServerValue.TIMESTAMP};
   const ref=await firebase.database().ref("orders").push(order);S.orderId=ref.key;return ref.key;
 }
+let _w=null;
+function watchOrder(id){try{if(_w)_w.off();_w=firebase.database().ref("orders/"+id+"/status");_w.on("value",s=>{const v=s.val();if(v){S.live=v;if(S.view==="done")render()}})}catch(e){}}
 function showAdminLogin(){S.view="adminlogin";S.err="";render();}
 async function adminLogin(){
   const email=$("#adminEmail")?.value.trim(),password=$("#adminPassword")?.value;
@@ -310,23 +312,22 @@ function render(){
     M.map((c,ci)=>`<section class="sec"><h2>${c[0]}</h2></section><div class="card">`+c[1].map((it,i)=>{const on=!S.adm.has(it[0]);return`<div class="arow"><span>${esc(it[0])}</span><label class="sw"><input type="checkbox" data-a="admtog" data-n="${ci}-${i}" ${on?"checked":""} aria-label="${esc(it[0])} available"><span class="knob"></span></label></div>`}).join("")+`</div>`).join("");
     bar.innerHTML=`<button class="bar" data-a="admsave" ${S.admBusy?"disabled":""}><span>${S.admBusy?"Saving…":"Save changes"}</span><span>${admDiff()} changed</span></button>`;
   }else{
-    hd.innerHTML=`<h1>Order ready<small>${S.f.pay==="UPI"?"Pay by UPI, then tap the green button to send your order":"Send your order to New Sindhu Catering on WhatsApp"}</small></h1>`;
-    app.innerHTML=`<div class="card"><h2>Last step</h2>${S.saveWarning?`<div class="meta" style="color:#b45309">${esc(S.saveWarning)}</div>`:""}<div class="msg">${esc(S.msg)}</div>${(S.f.loc||(S.f.ml&&S.f.ml.trim()))?"":`<div class="meta" style="margin-top:8px">No map pin added. The order message has a map link made from your address.</div>`}</div>
-    ${S.f.pay==="UPI"?`<div class="card"><h2>Pay ₹${total()} by UPI</h2>
+    hd.innerHTML=`<h1>Order placed<small>New Sindhu Catering · Mangadu</small></h1>`;
+    const st=S.live||"Pending";
+    const steps=["Pending","Accepted","Preparing","Out for Delivery","Delivered"];
+    const stTxt={"Pending":"Waiting for the shop to accept · கடை ஏற்கும் வரை காத்திருக்கிறது","Accepted":"Order accepted · ஆர்டர் ஏற்கப்பட்டது","Preparing":"Being prepared · தயாராகிறது","Out for Delivery":"Out for delivery · டெலிவரிக்கு வருகிறது","Delivered":"Delivered. Enjoy your meal! · டெலிவரி ஆனது","Rejected":"Sorry, the shop could not accept this order. Please call "+SHOW,"Cancelled":"Order cancelled. Please call "+SHOW};
+    const bad=(st==="Rejected"||st==="Cancelled"),idx=steps.indexOf(st);
+    app.innerHTML=`<div class="card"><h2>${esc(stTxt[st]||st)}</h2><div class="meta">Order #${esc(String(S.orderId||"").slice(-6))} · ₹${total()}</div>${bad?"":`<div style="margin-top:10px">${steps.map((s,i)=>`<div class="row"><span>${i<=idx?"✅":"⬜"} ${s}</span></div>`).join("")}</div>`}<div class="meta" style="margin-top:8px">This page updates automatically. இந்தப் பக்கம் தானாக புதுப்பிக்கப்படும்.</div></div>
+    ${(S.f.pay==="UPI"&&!bad&&st!=="Delivered")?`<div class="card"><h2>Pay ₹${total()} by UPI</h2>
     <div class="meta">UPI ID</div><div class="upiid">${UPI}</div>
     <a class="cta" href="${upiIntentUrl("com.google.android.apps.nbu.paisa.user")}" target="_self">Pay with Google Pay</a>
     <a class="cta alt" href="${upiIntentUrl("com.phonepe.app")}" target="_self">Pay with PhonePe</a>
     <a class="cta alt" href="${upiIntentUrl("net.one97.paytm")}" target="_self">Pay with Paytm</a>
     <a class="cta alt" href="${upiPayUrl()}" target="_self">Other UPI app</a>
     <button class="cta alt" data-a="copyupi">Copy UPI ID</button>
-    <div class="meta" style="margin-top:10px">If the app chooser does not open, open GPay, PhonePe or Paytm manually → Scan any UPI QR / Pay to UPI ID → enter ${UPI} → enter ₹${total()} and verify the receiver name before paying.</div>
-    <div class="meta">UPI ஆப்பைத் திறந்து → Pay to UPI ID → ${UPI} உள்ளிடுங்கள் → தொகை ₹${total()} சரிபார்த்து பணம் செலுத்துங்கள். பெறுநர் பெயரை உறுதிப்படுத்தவும்.</div>
     <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(upiPayUrl())}" alt="UPI payment QR code">
-    <div class="meta">This QR opens a UPI payment request for ${UPI} and ₹${total()}. Verify the receiver name and amount in your UPI app before confirming. Payment is not confirmed automatically by this website.</div></div>
-    <div class="meta" style="margin:8px 0">After paying, tap the WhatsApp button below to send your order to 9171193165. Attach your payment screenshot in WhatsApp. For Cash on Delivery, tap the same WhatsApp button to send your order.</div>`:""}
-    <a class="cta" target="_blank" rel="noopener" href="https://wa.me/${PHONE}?text=${encodeURIComponent(S.f.pay==="UPI"?S.msg+"\n\nPayment method: UPI\nPayment status: Customer will confirm payment in WhatsApp":S.msg)}">${S.f.pay==="UPI"?"✅ I have paid · Send order to 9171193165 on WhatsApp":"Send order to 9171193165 on WhatsApp"}</a>
-    <a class="cta alt" href="tel:+${PHONE}">Call to order · ${SHOW}</a>
-    <button class="cta alt" data-a="copy">Copy order text</button>
+    <div class="meta">Verify the receiver name and amount in your UPI app before paying. The shop confirms your payment manually.</div></div>`:""}
+    <a class="cta alt" href="tel:+${PHONE}">Call the shop · ${SHOW}</a>
     <button class="cta alt" data-a="new">New order</button>`;
   }
   scrollTo(0,y);
@@ -352,7 +353,7 @@ document.addEventListener("click",e=>{
     if(f.ml&&f.ml.trim()&&!/^https?:\/\/\S*(maps|goo\.gl)\S*$/i.test(f.ml.trim())){S.err="That does not look like a Google Maps link. In Google Maps tap Share → Copy link, then paste it here.";return render()}
     S.msg="New Sindhu Catering – New Order\n\nName: "+f.n.trim()+"\nMobile: "+f.p.trim()+"\nAddress: "+f.a.trim()+"\n\n"+rows().map(x=>"• "+x.n+" × "+x.q+" = ₹"+x.sum).join("\n")+"\n\nTotal: ₹"+total()+" (Delivery free)\nPayment: "+(f.pay==="UPI"?"UPI (paying now)":"Cash on delivery")+(f.ml&&f.ml.trim()?"\nMap pin: "+f.ml.trim():f.loc?"\nMap pin (GPS): https://maps.google.com/?q="+f.loc:"\nMap (from address, approximate): https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(f.a.trim()+", Mangadu, Chennai"));
     b.disabled=true;b.textContent="Saving order…";
-    saveCustomerOrder().then(()=>{S.saveWarning="";go("done")}).catch(er=>{S.saveWarning="The order could not be saved to the online Admin dashboard right now. Please still send it using the WhatsApp button below, or call the shop.";go("done")});
+    saveCustomerOrder().then(id=>{S.live="Pending";watchOrder(id);go("done")}).catch(er=>{go("cart");S.err="Order could not be placed. Please check your internet and try again, or call "+SHOW+".";render()});
   }
   else if(a==="adminlogin"){showAdminLogin()}
   else if(a==="adminlogin-submit"){adminLogin()}
@@ -364,7 +365,7 @@ document.addEventListener("click",e=>{
   else if(a==="payupi"){window.location.href=upiIntentUrl()}
   else if(a==="copyupi"){try{navigator.clipboard.writeText(UPI).then(()=>toast("UPI ID copied")).catch(()=>toast("UPI ID: "+UPI))}catch(x){toast("UPI ID: "+UPI)}}
   else if(a==="copy"){try{navigator.clipboard.writeText(S.msg).then(()=>toast("Copied")).catch(()=>toast("Press and hold the text above to copy it"))}catch(x){toast("Press and hold the text above to copy it")}}
-  else if(a==="new"){S.cart={};S.f.pay="Cash";go("menu")}
+  else if(a==="new"){if(_w){_w.off();_w=null}S.orderId=null;S.live="";S.cart={};S.f.pay="Cash";go("menu")}
 });
 function admDiff(){let n=0;M.forEach(c=>c[1].forEach(it=>{if(S.adm.has(it[0])!==(AVAIL.indexOf(it[0])>=0))n++}));return n}
 function buildDoc(names){
