@@ -1,0 +1,22 @@
+{
+  "name": "New Sindhu Delivery",
+  "short_name": "Sindhu Delivery",
+  "description": "Pure veg food ordering",
+  "start_url": "/newsindhu/delivery.html",
+  "scope": "/newsindhu/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f5c3a",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
