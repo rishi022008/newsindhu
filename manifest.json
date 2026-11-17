@@ -1,0 +1,21 @@
+{
+  "background_color": "#ffffff",
+  "dir": "auto",
+  "display": "standalone",
+  "name": "Sindhu Catering",
+  "orientation": "any",
+  "scope": "/newsindhu/",
+  "short_name": "New Sindhu",
+  "start_url": "https://rishi022008.github.io/newsindhu/",
+  "theme_color": "#1f5c3a",
+  "id": "/",
+  "description": "App Name: New Sindhu Catering   Short Name: New Sindhu   Description: A food ordering, management, and delivery application for New Sindhu Catering, featuring menu items, customer ordering, admin management, and live delivery tracking.Display Mode: Standalone   Background Color: #f2f5ee   Theme Color: #1f5c3a",
+  "display_override": [
+    "fullscreen",
+    "window-controls-overlay"
+  ],
+  "lang": "en",
+  "categories": [
+    "food"
+  ]
+}
