@@ -6,7 +6,8 @@ on:
     paths:
       - 'index.html'
       - 'admin/**'
-      - '.github/workflows/build-apk.yml'
+    - 'delivery/**'
+    - '.github/workflows/build-apk.yml'
 
 jobs:
   build:
@@ -31,18 +32,22 @@ jobs:
         run: |
           set -e
 
-          for APP in customer admin; do
-            mkdir -p "$APP/www"
+          for APP in customer admin delivery; do
+  mkdir -p "$APP/www"
 
-            if [ "$APP" = "customer" ]; then
-              cp index.html "$APP/www/index.html"
-              APP_NAME="New Sindhu Customer"
-              APP_ID="com.newsindhu.customer"
-            else
-              cp admin/index.html "$APP/www/index.html"
-              APP_NAME="New Sindhu Admin"
-              APP_ID="com.newsindhu.admin"
-            fi
+  if [ "$APP" = "customer" ]; then
+    cp index.html "$APP/www/index.html"
+    APP_NAME="New Sindhu Customer"
+    APP_ID="com.newsindhu.customer"
+  elif [ "$APP" = "admin" ]; then
+    cp admin/index.html "$APP/www/index.html"
+    APP_NAME="New Sindhu Admin"
+    APP_ID="com.newsindhu.admin"
+  else
+    cp delivery/index.html "$APP/www/index.html"
+    APP_NAME="New Sindhu Delivery"
+    APP_ID="com.newsindhu.delivery"
+  fi
 
             cd "$APP"
 
